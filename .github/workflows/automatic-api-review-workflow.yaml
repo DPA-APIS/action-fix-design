@@ -1,12 +1,7 @@
 
 name: automatic-api-review
 on:
-  workflow_call:
-    inputs:
-      environment:
-        required: false
-        type: string
-        default: 'PROD'
+  workflow_call
   
 env:
   RED: '\033[31m'
