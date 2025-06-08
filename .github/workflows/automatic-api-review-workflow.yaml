@@ -364,7 +364,8 @@ jobs:
           
       - name: Ejecutar comparaciones con oasdiff
         id: oas_diff
-        uses: BCP-APIs/oasdiff-action/diff@v1.0.0
+        #uses: BCP-APIs/oasdiff-action/diff@v1.0.0
+        uses: DPA-APIS/oasdiff-action/diff@v1.0.0
         if: ${{ steps.generate_files_base_revision.outcome == 'success' }}
         with:
           base: 'specs/base.yaml'
@@ -645,7 +646,8 @@ jobs:
         if: ${{ steps.validate_sequential_version.outcome == 'success' }}
         uses: actions/checkout@v4
         with:
-          repository: BCP-APIs/action-fix-design
+          #repository: BCP-APIs/action-fix-design
+          repository: DPA-APIS/action-fix-design
           ref: v2
           token: ${{ steps.gh_app.outputs.token }}
           path: action_fix_design-repo
