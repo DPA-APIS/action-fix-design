@@ -1,6 +1,13 @@
+
 name: automatic-api-review
 on:
-  workflow_call
+  workflow_call:
+    inputs:
+      environment:
+        required: false
+        type: string
+        default: 'PROD'
+  
 env:
   RED: '\033[31m'
   GREEN: '\033[32m'
@@ -10,7 +17,7 @@ env:
   API_DIRECTORY: 'api/'
   FUNCIONALITY_ENABLED: 'TRUE' # TRUE: habilitado, FALSE: deshabilitado
   GIT_ACTION_USER_NAME: 'gobiernoapis[bot]'
-  GIT_ACTION_USER_EMAIL: 'gobiernoapis@bcp.com.pe'
+  GIT_ACTION_USER_EMAIL: 'diomedex10@gmail.com'
   MSG_COMMIT_UPD_OPENAPI_VERSION: 'Actualizando version correcta del contrato OpenAPI'
   MSG_LAST_COMMIT: 'REVISAR-CONTRATO'
   VALID_API_TYPES: 'channel,business,core,dt' # Para desactivar todos configurar con 'none'
@@ -122,15 +129,6 @@ jobs:
           # Exportar el token de acceso como variable de salida
           echo "token=$access_token" >> $GITHUB_OUTPUT
 
-    
-# - name: Lint API
-#         id: lint_api
-#         if: false
-#         #if: ${{ steps.gh_app.outcome == 'success' }}
-#         uses: BCP-APIs/spectral-action@v1
-#         with:
-#           file_glob: ./api/${{ github.event.repository.name }}.yaml          
-#           gh_app: ${{ steps.gh_app.outputs.token }}
 
       
       - name: Obtener tipo de API
@@ -364,7 +362,6 @@ jobs:
           
       - name: Ejecutar comparaciones con oasdiff
         id: oas_diff
-        #uses: BCP-APIs/oasdiff-action/diff@v1.0.0
         uses: DPA-APIS/oasdiff-action/diff@v1.0.0
         if: ${{ steps.generate_files_base_revision.outcome == 'success' }}
         with:
@@ -646,7 +643,7 @@ jobs:
         if: ${{ steps.validate_sequential_version.outcome == 'success' }}
         uses: actions/checkout@v4
         with:
-          #repository: BCP-APIs/action-fix-design
+          
           repository: DPA-APIS/action-fix-design
           ref: v2
           token: ${{ steps.gh_app.outputs.token }}
