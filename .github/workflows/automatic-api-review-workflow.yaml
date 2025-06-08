@@ -122,14 +122,16 @@ jobs:
           # Exportar el token de acceso como variable de salida
           echo "token=$access_token" >> $GITHUB_OUTPUT
 
-      - name: Lint API
-        id: lint_api
-        if: false
-        #if: ${{ steps.gh_app.outcome == 'success' }}
-        uses: BCP-APIs/spectral-action@v1
-        with:
-          file_glob: ./api/${{ github.event.repository.name }}.yaml          
-          gh_app: ${{ steps.gh_app.outputs.token }}
+    
+# - name: Lint API
+#         id: lint_api
+#         if: false
+#         #if: ${{ steps.gh_app.outcome == 'success' }}
+#         uses: BCP-APIs/spectral-action@v1
+#         with:
+#           file_glob: ./api/${{ github.event.repository.name }}.yaml          
+#           gh_app: ${{ steps.gh_app.outputs.token }}
+
       
       - name: Obtener tipo de API
         shell: bash
