@@ -28,10 +28,10 @@ env:
     version
     security
     securitySchemes
-  OPENAPI_SNAPSHOT_KEYS_BS_CR: |
+  OPENAPI_SNAPSHOT_IGNORE_KEYS_BS_CR: |
     maxItems  
-  OPENAPI_SNAPSHOT_KEYS_UX: |
-    maxItems   
+  OPENAPI_SNAPSHOT_IGNORE_KEYS_UX: |
+    maxItems, pattern
   
 jobs:
   review-api:
@@ -164,7 +164,7 @@ jobs:
             exit 1
           fi
           echo "is_valid=$result" >> $GITHUB_OUTPUT
-      
+
       - name: Obtener versión del OpenAPI (info.version)
         id: read_openapi_version
         if: ${{ steps.validate_api_type.outputs.is_valid == 'TRUE' }} 
@@ -422,6 +422,89 @@ jobs:
               exit(1);
           }
 
+          function analyzeDiffF(array $diffJson): array
+          {
+              //$diff = json_decode($diffJson, true);
+              $diff = $diffJson;
+              $changes = [
+                  'deletedFields' => [],
+                  'addedFields'   => [],
+                  'modifiedFields' => [],
+              ];
+
+              // Helper para registrar un cambio
+              $recordChange = function (&$list, $location, $path, $method, $mediaType, $field, $attribute = '') {
+                  $list[] = [
+                      'location'  => $location,
+                      'path'      => $path,
+                      'method'    => $method,
+                      'mediaType' => $mediaType,
+                      'field'     => $field,
+                      'attribute' => $attribute,
+                  ];
+              };
+
+              // Procesa propiedades añadidas, eliminadas o modificadas
+              $processProperties = function ($properties, $type, $location, $path, $method, $mediaType) use (&$changes, $recordChange) {
+                  foreach ($properties as $field => $attributes) {
+                      // Si es un array indexado, usa el valor directamente como campo
+                      if (is_int($field)) {
+                          $field = $attributes; // El valor es el campo
+                          $attributes = ''; // No hay atributos adicionales
+                      }
+                      $attribute = is_array($attributes) ? key($attributes) : '';
+                      $recordChange($changes[$type], $location, $path, $method, $mediaType, $field, $attribute);
+                  }
+              };
+
+              // Procesa los cambios en requestBody
+              $processRequestBody = function ($content, $path, $method) use (&$changes, $processProperties) {
+                  foreach ($content as $mediaType => $schema) {
+                      if (isset($schema['schema']['properties']['added'])) {
+                          $processProperties($schema['schema']['properties']['added'], 'addedFields', 'request', $path, $method, $mediaType);
+                      }
+                      if (isset($schema['schema']['properties']['deleted'])) {
+                          $processProperties($schema['schema']['properties']['deleted'], 'deletedFields', 'request', $path, $method, $mediaType);
+                      }
+                      if (isset($schema['schema']['properties']['modified'])) {
+                          $processProperties($schema['schema']['properties']['modified'], 'modifiedFields', 'request', $path, $method, $mediaType);
+                      }
+                  }
+              };
+
+              // Procesa los cambios en responses
+              $processResponses = function ($responses, $path, $method) use (&$changes, $processProperties) {
+                  foreach ($responses as $mediaType => $schema) {
+                      if (isset($schema['schema']['properties']['modified'])) {
+                          $processProperties($schema['schema']['properties']['modified'], 'modifiedFields', 'responses', $path, $method, $mediaType);
+                      }
+                  }
+              };
+
+              // Recorre los cambios en paths
+              if (!empty($diff['paths']['modified'])) {
+                  foreach ($diff['paths']['modified'] as $path => $pathData) {
+                      if (!empty($pathData['operations']['modified'])) {
+                          foreach ($pathData['operations']['modified'] as $method => $operation) {
+                              $mediaTypeModified = "modified";
+                              if (!empty($operation['requestBody']['content']['mediaTypeModified'])) {
+                                $mediaTypeModified = "mediaTypeModified";
+                              }
+                              if (!empty($operation['requestBody']['content'][$mediaTypeModified])) {
+                                  $processRequestBody($operation['requestBody']['content'][$mediaTypeModified], $path, $method);
+                              }
+                              if (!empty($operation['responses']['modified'])) {
+                                  $processResponses($operation['responses']['modified'], $path, $method);
+                              }
+                          }
+                      }
+                  }
+              }
+              echo "ANALIZANDO";
+              echo json_encode($cleaned)."\n";
+              return $changes;
+          }
+
           // 2) Funciones auxiliares
           function removeKeysRecursive($array, $keyRemove) {
               foreach ($array as $key => $value) {
@@ -454,29 +537,24 @@ jobs:
           foreach ($keysToRemove as $k) {
               $array = removeKeysRecursive($array, $k);
           }
+
+          // 4) Elimina tags OpenApi tipo FIX BS yCORE
+          $keysToRemove = explode("\n", trim(getenv('OPENAPI_SNAPSHOT_IGNORE_KEYS_BS_CR')));
+          foreach ($keysToRemove as $k) {
+              $array = removeKeysRecursive($array, $k);
+          }
           echo "$YELLOW *********** PROCESANDO SOLICITUD $RESET\n";
           $cleaned = cleanEmptyArraysRec($array);
-    
-          // 4) Determinar si hay cambios FIX
           echo json_encode($cleaned)."\n";
+
+          $cleaned = analyzeDiffF($cleaned);
+          echo json_encode($cleaned)."\n";
+
+          // 4) Determinar si hay cambios FIX
           if (empty($cleaned)) {
               echo "$GREEN *********** SOLICITUD TIPO FIX VALIDA$RESET\n";
               file_put_contents(getenv('GITHUB_OUTPUT'), "is_fix=true\n", FILE_APPEND);
               file_put_contents(getenv('GITHUB_OUTPUT'), "is_snapshot=false\n", FILE_APPEND);
-              exit(0);
-          } 
-
-          // 3) Elimina claves SNAPSHOT
-          $keysToRemove = explode("\n", trim(getenv('OPENAPI_SNAPSHOT_KEYS_BS_CR')));
-          foreach ($keysToRemove as $k) {
-              $array = removeKeysRecursive($array, $k);
-          }
-
-          $cleaned = cleanEmptyArraysRec($array);
-          if (empty($cleaned)){
-              echo "$GREEN *********** SOLICITUD TIPO SNAPSHOT VALIDA$RESET\n";
-              file_put_contents(getenv('GITHUB_OUTPUT'), "is_fix=false\n", FILE_APPEND);
-              file_put_contents(getenv('GITHUB_OUTPUT'), "is_snapshot=true\n", FILE_APPEND);
               exit(0);
           } 
           
