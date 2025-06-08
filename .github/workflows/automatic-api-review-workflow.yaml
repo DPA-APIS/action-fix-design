@@ -75,9 +75,11 @@ jobs:
           ORGANIZATION: ${{ github.repository_owner }}  # Organización o propietario del repositorio
         run: |
           # Guardar la clave privada en un archivo temporal
-          cat <<EOF > private-key.pem
-          ${PRIVATE_KEY}
-          EOF
+          #cat <<EOF > private-key.pem
+          #${PRIVATE_KEY}
+          #EOF
+
+          printf "%b" "$PRIVATE_KEY" > private-key.pem
 
           # Generar JWT
           now=$(date +%s)
