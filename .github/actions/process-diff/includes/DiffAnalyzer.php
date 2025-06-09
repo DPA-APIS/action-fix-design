@@ -16,9 +16,7 @@ class DiffAnalyzer
         $generalKeys = explode("\n", trim(getenv('OPENAPI_IGNORE_KEYS')));
         var_dump($generalKeys);
         foreach ($generalKeys as $key) {
-            if (trim($key)) {
-                $array = $this->arrayUtils->removeKeysRecursive($array, trim($key));
-            }
+            $array = $this->arrayUtils->removeKeysRecursive($array, trim($key));
         }
         
         $array = $this->arrayUtils->cleanEmptyArraysRec($array);
@@ -32,9 +30,7 @@ class DiffAnalyzer
         if ($openapiType) {
             $apiKeys = explode("\n", trim(getenv('OPENAPI_IGNORE_KEYS_' . strtoupper($openapiType))));
             foreach ($apiKeys as $key) {
-                if (trim($key)) {
-                    $array = $this->arrayUtils->removeKeysRecursive($array, trim($key));
-                }
+                $array = $this->arrayUtils->removeKeysRecursive($array, trim($key));
             }
         }
 
