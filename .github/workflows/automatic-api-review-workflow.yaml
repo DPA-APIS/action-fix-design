@@ -468,7 +468,26 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.gh_app_pr.outputs.token }}
         run: |
-          gh pr create --title ${GITHUB_REF_NAME} --body-file ./action_fix_design-repo/templates/PULL_REQUEST_TEMPLATE.md
+          # Crear el template del PR directamente
+          cat > pr_template.md << 'EOF'
+          ## Descripción
+          
+          Este Pull Request ha sido generado automáticamente por el sistema de revisión de APIs tipo FIX.
+          
+          ## Información técnica
+          
+          - **Versión OpenAPI**: ${{ steps.read_openapi_version.outputs.openapi_version }}
+          - **Último tag**: ${{ steps.get_latest_tag.outputs.latest_tag }}
+          - **Nuevo tag**: ${{ steps.validate_sequential_version.outputs.tags_new_version }}
+          - **Tipo de API**: ${{ steps.get_api_type.outputs.api_type }}
+          - **Tipo de cambio**: ${{ steps.process_diff.outputs.is_fix == 'true' && 'FIX' || 'SNAPSHOT' }}
+
+          ---
+
+          *Este PR fue generado automáticamente por GitHub Actions*
+          EOF
+          
+          gh pr create --title "${GITHUB_REF_NAME}" --body-file pr_template.md
 
       - name: Aprobar Pull Request
         if: ${{ steps.create_pr.outcome == 'success' }}
