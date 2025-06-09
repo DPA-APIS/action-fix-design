@@ -20,12 +20,12 @@
         // 1. Procesar JSON
         $jsonProcessor = new JsonProcessor();
         $array = $jsonProcessor->loadAndCleanJson($diffFile);
-        echo json_encode($array) ." $RESET\n";
 
         // 4. Analizar diferencias
         $analyzer = new DiffAnalyzer($apiType);
         $result = $analyzer->removedKeysGeneral($array);
         $result = $analyzer->removedKeysByApiType($array, $openapiType);
+        echo json_encode($array) ." $RESET\n";
 
         // 5. Determinar resultado
         if (empty($result)) {
