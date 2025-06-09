@@ -25,7 +25,7 @@
         $analyzer = new DiffAnalyzer();
         $result = $analyzer->removedKeysGeneral($array);
         $result = $analyzer->removedKeysByApiType($array, $openapiType);
-        echo json_encode($array) ." $RESET\n";
+        echo json_encode($result) ." $RESET\n";
 
         // 5. Determinar resultado
         if (empty($result)) {
