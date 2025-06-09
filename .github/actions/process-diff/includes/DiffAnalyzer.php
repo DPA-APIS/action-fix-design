@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/includes/ArrayUtils.php';
+require_once __DIR__ . 'ArrayUtils.php';
 
 class DiffAnalyzer
 {
