@@ -462,17 +462,6 @@ jobs:
           #Configurar el romote con el Token
           git remote set-url origin "https://x-access-token:${{ steps.gh_app.outputs.token }}@github.com/${{ github.repository }}.git"
 
-      - name: Clonar repositorio de Action Fix Design
-        id: checkout_action_fix_design_repo
-        if: ${{ steps.validate_sequential_version.outcome == 'success' }}
-        uses: actions/checkout@v4
-        with:
-          
-          repository: DPA-APIS/action-fix-design
-          ref: v2
-          token: ${{ steps.gh_app.outputs.token }}
-          path: action_fix_design-repo
-
       - name: Crear Pull Request
         id: create_pr
         if: ${{ steps.checkout_action_fix_design_repo.outcome == 'success' && steps.gh_app_pr.outcome == 'success'}}
