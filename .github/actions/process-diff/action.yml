@@ -28,4 +28,4 @@ runs:
       shell: bash
       run: |
         echo "🔄 Procesando diff de OpenAPI..."
-        php ${{ github.action_path }}/process-diff.php "${{ inputs.diff-file }}" "${{ inputs.api-type }}"
+        php ${{ github.action_path }}/process-diff.php "${{ inputs.diff-file }}" "${{ inputs.api-type }}" "${{ inputs.openapi-api-type }}"

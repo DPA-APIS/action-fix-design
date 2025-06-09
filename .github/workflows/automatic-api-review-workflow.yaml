@@ -151,7 +151,7 @@ jobs:
           echo -e $GREEN"******** El tipo de API es: '$api_type'."$RESET
           echo "api_type=$api_type" >> $GITHUB_OUTPUT
 
-          echo -e $GREEN"******** El CODIGO tipo de API en el Contrato: '$openapi_api_type'."$RESET
+          echo -e $GREEN"******** El tipo de API(openapi): '$openapi_api_type'."$RESET
           echo "openapi_api_type=$openapi_api_type" >> $GITHUB_OUTPUT
   
       - name: Validar tipo de API habilitado
@@ -397,7 +397,6 @@ jobs:
       - name: Procesar resultado de comparacion (BS y CR)
         if: ${{ steps.oas_diff.outcome == 'success' }}
         id: process_diff
-        #uses: ./.github/actions/process-diff 
         uses: DPA-APIS/action-fix-design/.github/actions/process-diff@fix-fase02
 
         with:

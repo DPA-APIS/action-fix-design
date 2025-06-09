@@ -15,7 +15,7 @@
 
     echo "$YELLOW Procesando archivo: $diffFile$RESET\n";
     echo "$YELLOW Tipo de API: $apiType$RESET\n";
-    echo "$YELLOW CODE Tipo de API(Openapi): $openapiType$RESET\n";
+    echo "$YELLOW Tipo de API(Openapi): $openapiType$RESET\n";
 
     try {
         // 1. Procesar JSON
