@@ -15,7 +15,7 @@ class ArrayUtils
             if ($key === $keyRemove) {
                 unset($array[$key]);
             } else if (is_array($value)) {
-                $array[$key] = removeKeysRecursive($value, $keyRemove);
+                $array[$key] = $this->removeKeysRecursive($value, $keyRemove);
             } else if($value == "x-stoplight"){
                 unset($array[$key]);
             }
@@ -29,7 +29,7 @@ class ArrayUtils
     public function cleanEmptyArraysRec(array $array): array
     {
         $array = array_map(function ($item) {
-            return is_array($item) ? cleanEmptyArraysRec($item) : $item;
+            return is_array($item) ? $this->cleanEmptyArraysRec($item) : $item;
         }, $array);
 
         $array = array_filter($array, function ($v) {

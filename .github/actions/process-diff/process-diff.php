@@ -12,8 +12,8 @@
     $diffFile = $argv[1] ?? 'diff-result.json';
     $apiType = $argv[2] ?? '';
 
-    echo "$YELLOW🔍 Procesando archivo: $diffFile$RESET\n";
-    echo "$YELLOW📋 Tipo de API: $apiType$RESET\n";
+    echo "$YELLOW Procesando archivo: $diffFile$RESET\n";
+    echo "$YELLOW Tipo de API: $apiType$RESET\n";
 
     try {
         // 1. Procesar JSON
@@ -26,11 +26,11 @@
         
         // 5. Determinar resultado
         if (empty($result)) {
-            echo "$GREEN✅ SOLICITUD TIPO FIX VÁLIDA$RESET\n";
+            echo "$GREEN ✅ SOLICITUD TIPO FIX VÁLIDA$RESET\n";
             file_put_contents(getenv('GITHUB_OUTPUT'), "is_fix=true\n", FILE_APPEND);
             file_put_contents(getenv('GITHUB_OUTPUT'), "is_snapshot=false\n", FILE_APPEND);
         } else {
-            echo "$RED❌ SOLICITUD TIPO FIX INVÁLIDA$RESET\n";
+            echo "$RED ❌ SOLICITUD TIPO FIX INVÁLIDA$RESET\n";
             file_put_contents(getenv('GITHUB_OUTPUT'), "is_fix=false\n", FILE_APPEND);
             file_put_contents(getenv('GITHUB_OUTPUT'), "is_snapshot=false\n", FILE_APPEND);
         }
@@ -38,7 +38,7 @@
         echo "$GREEN🎉 Procesamiento completado$RESET\n";
         
     } catch (Exception $e) {
-        echo "$RED❌ Error: " . $e->getMessage() . "$RESET\n";
+        echo "$RED ❌ Error: " . $e->getMessage() . "$RESET\n";
         exit(1);
     }
     
