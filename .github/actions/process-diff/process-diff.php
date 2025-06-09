@@ -11,6 +11,7 @@
     // Obtener argumentos
     $diffFile = $argv[1] ?? 'diff-result.json';
     $apiType = $argv[2] ?? '';
+    $openapiType = s$argv[3] ?? '';
 
     echo "$YELLOW Procesando archivo: $diffFile$RESET\n";
     echo "$YELLOW Tipo de API: $apiType$RESET\n";
@@ -22,9 +23,10 @@
         echo json_encode($array) ." $RESET\n";
 
         // 4. Analizar diferencias
-        $analyzer = new DiffAnalyzer();
+        $analyzer = new DiffAnalyzer($apiType);
         $result = $analyzer->removedKeysGeneral($array);
-        
+        $result = $analyzer->removedKeysByApiType($array, $openapiType);
+
         // 5. Determinar resultado
         if (empty($result)) {
             echo "$GREEN ✅ SOLICITUD TIPO FIX VÁLIDA$RESET\n";
