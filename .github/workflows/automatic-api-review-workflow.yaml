@@ -452,7 +452,7 @@ jobs:
       - name: Configurar usuario git
         shell: bash
         id: config_git
-        if: ${{ steps.process_diff.outputs.is_fix == 'true' || steps.process_diff.outputs.is_snapshot == 'true'}}
+        if: ${{ steps.gh_app_pr.outcome == 'success' }}
         run: |
           # Configurar usuario de github action que realizara las operaciones GIT
           sudo chown -R "${USER:-$(id -un)}" .
@@ -464,7 +464,7 @@ jobs:
 
       - name: Crear Pull Request
         id: create_pr
-        if: ${{ steps.checkout_action_fix_design_repo.outcome == 'success' && steps.gh_app_pr.outcome == 'success'}}
+        if: ${{ steps.config_git.outcome == 'success' }}
         env:
           GH_TOKEN: ${{ steps.gh_app_pr.outputs.token }}
         run: |
