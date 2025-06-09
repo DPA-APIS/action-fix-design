@@ -35,7 +35,7 @@
             file_put_contents(getenv('GITHUB_OUTPUT'), "is_snapshot=false\n", FILE_APPEND);
         }
         
-        echo "$GREEN🎉 Procesamiento completado$RESET\n";
+        echo "$GREEN 🎉 Procesamiento completado$RESET\n";
         
     } catch (Exception $e) {
         echo "$RED ❌ Error: " . $e->getMessage() . "$RESET\n";
