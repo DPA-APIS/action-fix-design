@@ -11,7 +11,7 @@
     // Obtener argumentos
     $diffFile = $argv[1] ?? 'diff-result.json';
     $apiType = $argv[2] ?? '';
-    $openapiType = s$argv[3] ?? '';
+    $openapiType = $argv[3] ?? '';
 
     echo "$YELLOW Procesando archivo: $diffFile$RESET\n";
     echo "$YELLOW Tipo de API: $apiType$RESET\n";
