@@ -14,6 +14,7 @@ class DiffAnalyzer
     {
         // Eliminar claves generales
         $generalKeys = explode("\n", trim(getenv('OPENAPI_IGNORE_KEYS')));
+        var_dump($generalKeys);
         foreach ($generalKeys as $key) {
             if (trim($key)) {
                 $array = $this->arrayUtils->removeKeysRecursive($array, trim($key));

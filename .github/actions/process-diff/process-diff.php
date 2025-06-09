@@ -22,7 +22,7 @@
         $array = $jsonProcessor->loadAndCleanJson($diffFile);
 
         // 4. Analizar diferencias
-        $analyzer = new DiffAnalyzer($apiType);
+        $analyzer = new DiffAnalyzer();
         $result = $analyzer->removedKeysGeneral($array);
         $result = $analyzer->removedKeysByApiType($array, $openapiType);
         echo json_encode($array) ." $RESET\n";
