@@ -30,11 +30,11 @@ env:
     version
     security
     securitySchemes
-  OPENAPI_SNAPSHOT_IGNORE_KEYS_BS: |
+  OPENAPI_IGNORE_KEYS_BS: |
     example
     maxLength
     minLength
-  OPENAPI_SNAPSHOT_IGNORE_KEYS_UX: |
+  OPENAPI_IGNORE_KEYS_UX: |
     pattern
     example
     maxLength
