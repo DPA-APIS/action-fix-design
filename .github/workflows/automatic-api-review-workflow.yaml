@@ -460,7 +460,7 @@ jobs:
           git config --global user.email $GIT_ACTION_USER_EMAIL
 
           #Configurar el romote con el Token
-          git remote set-url origin "https://x-access-token:${{ steps.gh_app.outputs.token }}@github.com/${{ github.repository }}.git"
+          git remote set-url origin "https://x-access-token:${{ steps.gh_app_pr.outputs.token }}@github.com/${{ github.repository }}.git"
 
       - name: Crear Pull Request
         id: create_pr
