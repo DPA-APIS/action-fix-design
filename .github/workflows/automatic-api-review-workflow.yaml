@@ -383,7 +383,9 @@ jobs:
       - name: Procesar resultado de comparacion (BS y CR)
         if: ${{ steps.oas_diff.outcome == 'success' }}
         id: process_diff
-        uses: ./.github/actions/process-diff
+        #uses: ./.github/actions/process-diff 
+        uses: DPA-APIS/action-fix-design/.github/actions/process-diff@fix-fase02
+
         with:
           diff-file: 'diff-result.json'
           api-type: ${{ steps.get_api_type.outputs.api_type }}
