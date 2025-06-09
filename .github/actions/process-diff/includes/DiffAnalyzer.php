@@ -25,11 +25,11 @@ class DiffAnalyzer
         return $array;
     }
 
-    public function removedKeysByApiType(array $array, String $apiType): array
+    public function removedKeysByApiType(array $array, String $openapiType): array
     {
         // Eliminar claves específicas por tipo de API
-        if ($this->apiType) {
-            $apiKeys = explode("\n", trim(getenv('OPENAPI_IGNORE_KEYS_' . strtoupper($this->apiType))));
+        if ($openapiType) {
+            $apiKeys = explode("\n", trim(getenv('OPENAPI_IGNORE_KEYS_' . strtoupper($openapiType))));
             foreach ($apiKeys as $key) {
                 if (trim($key)) {
                     $array = $this->arrayUtils->removeKeysRecursive($array, trim($key));
