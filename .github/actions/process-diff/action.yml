@@ -9,6 +9,10 @@ inputs:
     description: 'Tipo de API (bs, cr o ux)'
     required: true
     default: ''
+  openapi-api-type:
+    description: 'Tipo de API OpenAPI (bs, cr o ux)'
+    required: true
+    default: ''  
 outputs:
   is_fix:
     description: 'Indica si los cambios son de tipo fix'

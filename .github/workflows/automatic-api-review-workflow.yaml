@@ -30,10 +30,15 @@ env:
     version
     security
     securitySchemes
-  OPENAPI_SNAPSHOT_IGNORE_KEYS_BS_CR: |
-    maxItems  
+  OPENAPI_SNAPSHOT_IGNORE_KEYS_BS: |
+    example
+    maxLength
+    minLength
   OPENAPI_SNAPSHOT_IGNORE_KEYS_UX: |
-    maxItems, pattern
+    pattern
+    example
+    maxLength
+    minLength
   
 jobs:
   review-api:
@@ -137,8 +142,17 @@ jobs:
           # Obtener tipo de API a partir del nombre de repositorio
           git_repo_name="${{ github.event.repository.name }}"
           api_type=$(echo $git_repo_name | cut -d'-' -f1)
+
+          # Lee el tipo de API del archivo OpenAPI
+          GIT_REPO_NAME="${{ github.event.repository.name }}"
+          API_DIRECTORY="${{ env.API_DIRECTORY }}"
+          openapi_api_type=$(yq '.x-dpa-api-type' "${API_DIRECTORY}${GIT_REPO_NAME}.yaml")
+
           echo -e $GREEN"******** El tipo de API es: '$api_type'."$RESET
           echo "api_type=$api_type" >> $GITHUB_OUTPUT
+
+          echo -e $GREEN"******** El CODIGO tipo de API en el Contrato: '$openapi_api_type'."$RESET
+          echo "openapi_api_type=$openapi_api_type" >> $GITHUB_OUTPUT
   
       - name: Validar tipo de API habilitado
         shell: bash
@@ -389,6 +403,7 @@ jobs:
         with:
           diff-file: 'diff-result.json'
           api-type: ${{ steps.get_api_type.outputs.api_type }}
+          openapi-api-type: ${{ steps.get_api_type.outputs.openapi_api_type }}
 
       - name: Generar token de acceso para crear PR
         id: gh_app_pr
