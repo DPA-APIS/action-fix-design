@@ -2,8 +2,15 @@
 
 class ArrayUtils
 {
-     // 2) Funciones auxiliares
-    public function removeKeysRecursive($array, $keyRemove) {
+    public function __construct()
+    {
+    }
+    
+    /**
+     * Elimina claves específicas de un array, incluyendo claves anidadas
+     */
+    public function removeKeysRecursive($array, $keyRemove) 
+    {
         foreach ($array as $key => $value) {
             if ($key === $keyRemove) {
                 unset($array[$key]);
@@ -16,6 +23,9 @@ class ArrayUtils
         return $array;
     }
 
+    /**
+     * Limpia arrays vacíos de forma recursiva
+     */
     public function cleanEmptyArraysRec(array $array): array
     {
         $array = array_map(function ($item) {
@@ -29,3 +39,4 @@ class ArrayUtils
         return $array;
     }
 }
+?>

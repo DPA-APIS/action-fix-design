@@ -1,5 +1,5 @@
 <?php
-    / Incluir archivos auxiliares
+    // Incluir archivos auxiliares
     require_once __DIR__ . '/includes/JsonProcessor.php';
     require_once __DIR__ . '/includes/DiffAnalyzer.php';
 
