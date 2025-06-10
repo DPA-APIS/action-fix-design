@@ -26,7 +26,7 @@
         $analyzer = new DiffAnalyzer();
         //$result = $analyzer->removedKeysGeneral($array);
         //$result = $analyzer->removedKeysByApiType($result, $openapiType);
-        $result = $analyzer->execute($result, $openapiType);
+        $result = $analyzer->execute($array, $openapiType);
         echo json_encode($result['content-diff']) ." $RESET\n";
 
         // 5. Determinar resultado
