@@ -21,7 +21,7 @@
         // 1. Procesar JSON
         $jsonProcessor = new JsonProcessor();
         $array = $jsonProcessor->loadAndCleanJson($diffFile);
-
+        echo json_encode($array) ." $RESET\n";
         // 4. Analizar diferencias
         $analyzer = new DiffAnalyzer();
         //$result = $analyzer->removedKeysGeneral($array);

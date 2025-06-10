@@ -55,15 +55,17 @@ env:
   OPENAPI_REMOVE_KEYS_SNAPSHOT_BS: |
     minItems
     maxItems
+    responses
   OPENAPI_REMOVE_KEYS_SNAPSHOT_CR: |
     minItems
     maxItems  
-
+    responses
   OPENAPI_REMOVE_KEYS_SNAPSHOT_UX: |
     minItems
     maxItems
     properties
-    query  
+    query
+    responses
   
 jobs:
   review-api:
