@@ -33,6 +33,7 @@ env:
     minimum
     default
     required
+    format
   OPENAPI_IGNORE_KEYS_BS: |
     pattern
     example
