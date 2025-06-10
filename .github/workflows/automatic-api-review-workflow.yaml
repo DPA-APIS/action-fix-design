@@ -37,7 +37,7 @@ env:
     readOnly
     style
     extensions
-    operationId
+    operationID
     components
   OPENAPI_IGNORE_KEYS_BS: |
     pattern
