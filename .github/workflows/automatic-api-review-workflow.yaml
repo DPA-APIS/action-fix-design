@@ -49,7 +49,7 @@ env:
   OPENAPI_REMOVE_KEYS_SNAPSHOT_CR: |
     minItems
     maxItems  
-    
+
   OPENAPI_REMOVE_KEYS_SNAPSHOT_UX: |
     minItems
     maxItems
@@ -542,13 +542,13 @@ jobs:
       - name: Generar tag
         id: generate_tag
         shell: bash
-        if: ${{ steps.validate_sequential_version.outputs.tags_new_version != null}}
+        if: ${{ steps.validate_sequential_version.outputs.tags_new_version != null && steps.checkout_base_branch.outcome == 'success'}}
         run: |
           # Generar tag en GIT para la version fix
-          tag="${{ steps.validate_sequential_version.outputs.tags_new_version }}"
+          tags_new_version="${{ steps.validate_sequential_version.outputs.tags_new_version }}"
           is_snapshot="${{ steps.process_diff.outputs.is_snapshot }}"
           if [[ $is_snapshot == 'true' ]]; then
-            tag="$tag-SNAPSHOT"
+            tag="$tags_new_version-SNAPSHOT"
           fi
 
           git tag -a "$tag" -m "$tag"
