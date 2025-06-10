@@ -24,15 +24,20 @@
 
         // 4. Analizar diferencias
         $analyzer = new DiffAnalyzer();
-        $result = $analyzer->removedKeysGeneral($array);
-        $result = $analyzer->removedKeysByApiType($result, $openapiType);
-        echo json_encode($result) ." $RESET\n";
+        //$result = $analyzer->removedKeysGeneral($array);
+        //$result = $analyzer->removedKeysByApiType($result, $openapiType);
+        $result = $analyzer->excute($result, $openapiType);
+        echo json_encode($result['content-diff']) ." $RESET\n";
 
         // 5. Determinar resultado
-        if (empty($result)) {
+        if (!empty($result['is_fix'])) {
             echo "$GREEN ✅ SOLICITUD TIPO FIX VÁLIDA$RESET\n";
             file_put_contents(getenv('GITHUB_OUTPUT'), "is_fix=true\n", FILE_APPEND);
             file_put_contents(getenv('GITHUB_OUTPUT'), "is_snapshot=false\n", FILE_APPEND);
+        } elseif(!empty($result['is_snapshot'])) {
+            echo "$GREEN ✅ SOLICITUD TIPO FIX SANPSHOT VÁLIDA$RESET\n";
+            file_put_contents(getenv('GITHUB_OUTPUT'), "is_fix=false\n", FILE_APPEND);
+            file_put_contents(getenv('GITHUB_OUTPUT'), "is_snapshot=true\n", FILE_APPEND);
         } else {
             echo "$RED ❌ SOLICITUD TIPO FIX INVÁLIDA$RESET\n";
             file_put_contents(getenv('GITHUB_OUTPUT'), "is_fix=false\n", FILE_APPEND);

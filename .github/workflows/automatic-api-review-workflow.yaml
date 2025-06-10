@@ -39,6 +39,15 @@ env:
     example
     maxLength
     minLength
+  OPENAPI_REMOVE_KEYS_SNAPSHOT_BS: |
+    minItems
+    maxItems
+    
+  OPENAPI_REMOVE_KEYS_SNAPSHOT_UX: |
+    minItems
+    maxItems
+    properties
+    query  
   
 jobs:
   review-api:
