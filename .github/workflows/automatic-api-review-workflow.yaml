@@ -31,10 +31,12 @@ env:
     security
     securitySchemes
   OPENAPI_IGNORE_KEYS_BS: |
+    pattern
     example
     maxLength
     minLength
   OPENAPI_IGNORE_KEYS_CR: |
+    pattern
     example
     maxLength
     minLength  
