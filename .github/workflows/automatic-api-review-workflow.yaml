@@ -550,9 +550,9 @@ jobs:
           tags_new_version="${{ steps.validate_sequential_version.outputs.tags_new_version }}"
           is_snapshot="${{ steps.process_diff.outputs.is_snapshot }}"
           if [[ $is_snapshot == 'true' ]]; then
-            tag="$tags_new_version-SNAPSHOT"
+            tags_new_version="$tags_new_version-SNAPSHOT"
           fi
 
-          git tag -a "$tag" -m "$tag"
-          git push origin "${tag}"
-          echo -e $GREEN"******** Se genero tag '$tag' en GIT para la nueva version FIX."$RESET
+          git tag -a "$tags_new_version" -m "$tags_new_version"
+          git push origin "${tags_new_version}"
+          echo -e $GREEN"******** Se genero tag '$tags_new_version' en GIT para la nueva version FIX."$RESET
