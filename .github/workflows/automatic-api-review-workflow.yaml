@@ -30,6 +30,9 @@ env:
     version
     security
     securitySchemes
+    minimum
+    default
+    required
   OPENAPI_IGNORE_KEYS_BS: |
     pattern
     example
