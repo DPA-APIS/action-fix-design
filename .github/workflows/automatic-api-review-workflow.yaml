@@ -34,6 +34,10 @@ env:
     example
     maxLength
     minLength
+  OPENAPI_IGNORE_KEYS_CR: |
+    example
+    maxLength
+    minLength  
   OPENAPI_IGNORE_KEYS_UX: |
     pattern
     example
@@ -42,6 +46,9 @@ env:
   OPENAPI_REMOVE_KEYS_SNAPSHOT_BS: |
     minItems
     maxItems
+  OPENAPI_REMOVE_KEYS_SNAPSHOT_CR: |
+    minItems
+    maxItems  
     
   OPENAPI_REMOVE_KEYS_SNAPSHOT_UX: |
     minItems
