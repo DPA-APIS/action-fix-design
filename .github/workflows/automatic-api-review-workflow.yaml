@@ -35,6 +35,8 @@ env:
     required
     format
     readOnly
+    style
+    extensions
   OPENAPI_IGNORE_KEYS_BS: |
     pattern
     example
