@@ -102,7 +102,7 @@ jobs:
       - name: Generar token de acceso
         id: gh_app
         if: ${{ steps.validate_last_commit_msg.outputs.is_valid == 'TRUE' }}
-        uses: DPA-APIS/action-fix-design/.github/actions/gh-app-token@fix-fase02
+        uses: DPA-APIS/action-fix-design/.github/actions/generate-app-token@fix-fase02
         with:
           app-id: ${{ vars.GH_APP_ID_AUTOMATIC_API_REVIEW }}
           private-key: ${{ secrets.GH_APP_PK_AUTOMATIC_API_REVIEW }}
@@ -370,7 +370,7 @@ jobs:
           jq --exit-status . diff-result.json > /dev/null
           echo -e $GREEN"********** JSON VALIDO"$RESET
 
-      - name: Procesar resultado de comparacion (BS y CR)
+      - name: Procesar diferecias de contratos OpenAPI
         if: ${{ steps.oas_diff.outcome == 'success' }}
         id: process_diff
         uses: DPA-APIS/action-fix-design/.github/actions/process-diff@fix-fase02
@@ -383,7 +383,7 @@ jobs:
       - name: Generar token de acceso para crear PR
         id: gh_app_pr
         if: ${{ steps.process_diff.outputs.is_fix == 'true' || steps.process_diff.outputs.is_snapshot == 'true' }}
-        uses: DPA-APIS/action-fix-design/.github/actions/gh-app-token@fix-fase02
+        uses: DPA-APIS/action-fix-design/.github/actions/generate-app-token@fix-fase02
         with:
           app-id: ${{ vars.GH_APP_ID_PR_FIX_DESIGN_ACTION }}
           private-key: ${{ secrets.GH_APP_PK_PR_FIX_DESIGN_ACTION }}
