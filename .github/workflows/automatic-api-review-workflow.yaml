@@ -37,7 +37,7 @@ env:
     readOnly
     style
     extensions
-    operationID
+    operationId
     components
   OPENAPI_IGNORE_KEYS_BS: |
     pattern
@@ -101,67 +101,14 @@ jobs:
 
       - name: Generar token de acceso
         id: gh_app
-        shell: bash
         if: ${{ steps.validate_last_commit_msg.outputs.is_valid == 'TRUE' }}
-        env:
-          PRIVATE_KEY: ${{ secrets.GH_APP_PK_AUTOMATIC_API_REVIEW }}  # Clave privada
-          APP_ID: ${{ vars.GH_APP_ID_AUTOMATIC_API_REVIEW }}  # ID de la GitHub App
-          ORGANIZATION: ${{ github.repository_owner }}  # Organización o propietario del repositorio
-        run: |
-          # Guardar la clave privada en un archivo temporal
-          #cat <<EOF > private-key.pem
-          #${PRIVATE_KEY}
-          #EOF
-
-          printf "%b" "$PRIVATE_KEY" > private-key.pem
-
-          # Generar JWT
-          now=$(date +%s)
-          iat=$((${now} - 60)) # Emitido hace 60 segundos
-          exp=$((${now} + 600)) # Expira en 10 minutos
-
-          b64enc() { openssl base64 -e -A | tr -d '=' | tr '/+' '_-' | tr -d '\n'; }
-
-          header_json='{
-              "typ":"JWT",
-              "alg":"RS256"
-          }'
-          header=$(echo -n "${header_json}" | b64enc)
-
-          payload_json="{
-              \"iat\":${iat},
-              \"exp\":${exp},
-              \"iss\":\"${APP_ID}\"
-          }"
-          payload=$(echo -n "${payload_json}" | b64enc)
-
-          header_payload="${header}.${payload}"
-          signature=$(echo -n "${header_payload}" | openssl dgst -sha256 -sign private-key.pem | b64enc)
-
-          jwt_token="${header_payload}.${signature}"
-
-          # Obtener ID de instalación
-          installations=$(curl -s -H "Authorization: Bearer $jwt_token" -H "Accept: application/vnd.github.v3+json" https://api.github.com/app/installations)
-          installation_id=$(echo "$installations" | jq -r --arg org "$ORGANIZATION" '.[] | select(.account.login == $org) | .id')
-
-          if [ -z "$installation_id" ]; then
-            echo "No matching account found for the provided organization."
-            exit 1
-          fi
-
-          # Obtener token de acceso
-          access_token=$(curl -s -X POST -H "Authorization: Bearer $jwt_token" -H "Accept: application/vnd.github.v3+json" https://api.github.com/app/installations/$installation_id/access_tokens | jq -r '.token')
-
-          if [ -z "$access_token" ]; then
-            echo "Failed to obtain access token."
-            exit 1
-          fi
-
-          # Exportar el token de acceso como variable de salida
-          echo "token=$access_token" >> $GITHUB_OUTPUT
-
-
-      
+        uses: DPA-APIS/action-fix-design/.github/actions/gh-app-token@fix-fase02
+        with:
+          app-id: ${{ vars.GH_APP_ID_AUTOMATIC_API_REVIEW }}
+          private-key: ${{ secrets.GH_APP_PK_AUTOMATIC_API_REVIEW }}
+          organization: ${{ github.repository_owner }}
+          purpose: 'API Token Review'
+       
       - name: Obtener tipo de API
         shell: bash
         id: get_api_type
@@ -436,61 +383,12 @@ jobs:
       - name: Generar token de acceso para crear PR
         id: gh_app_pr
         if: ${{ steps.process_diff.outputs.is_fix == 'true' || steps.process_diff.outputs.is_snapshot == 'true' }}
-        shell: bash
-        env:
-          APP_ID: ${{ vars.GH_APP_ID_PR_FIX_DESIGN_ACTION }}
-          PRIVATE_KEY: ${{ secrets.GH_APP_PK_PR_FIX_DESIGN_ACTION }}
-          ORGANIZACION: ${{ github.repository_owner }}
-        run: |
-          # Variables necesarias
-          client_id=$APP_ID
-          PRIVATE_KEY=$PRIVATE_KEY
-          ORGANIZATION=$ORGANIZACION          
-          # Verificar si la clave privada está presente
-          if [ -z "$PRIVATE_KEY" ]; then
-            echo "Private key is missing."
-            exit 1
-          fi          
-          # Generar JWT
-          now=$(date +%s)
-          iat=$((${now} - 60)) # Emitido hace 60 segundos
-          exp=$((${now} + 600)) # Expira en 10 minutos          
-          b64enc() { openssl base64 -e -A | tr -d '=' | tr '/+' '_-' | tr -d '\n'; }          
-          header_json='{
-              "typ":"JWT",
-              "alg":"RS256"
-          }'
-          # Codificar el encabezado
-          header=$(echo -n "${header_json}" | b64enc)          
-          payload_json="{
-              \"iat\":${iat},
-              \"exp\":${exp},
-              \"iss\":\"${client_id}\"
-          }"
-          # Codificar el payload
-          payload=$(echo -n "${payload_json}" | b64enc)          
-          # Firmar el JWT
-          header_payload="${header}.${payload}"
-          signature=$(echo -n "${header_payload}" | openssl dgst -sha256 -sign <(echo -n "${PRIVATE_KEY}") | b64enc)          
-          # Crear el JWT
-          jwt_token="${header_payload}.${signature}"          
-          # Obtener instalaciones
-          installations=$(curl -s -H "Authorization: Bearer $jwt_token" -H "Accept: application/vnd.github.v3+json" https://api.github.com/app/installations)          
-          # Encontrar ID de instalación
-          installation_id=$(echo "$installations" | jq -r --arg org "$ORGANIZATION" '.[] | select(.account.login == $org) | .id')          
-          if [ -z "$installation_id" ]; then
-            echo "No matching account found for the provided organization."
-            exit 1
-          fi          
-          echo "ID de instalación seleccionado: $installation_id"          
-          # Obtener token de acceso
-          access_token=$(curl -s -X POST -H "Authorization: Bearer $jwt_token" -H "Accept: application/vnd.github.v3+json" https://api.github.com/app/installations/$installation_id/access_tokens | jq -r '.token')          
-          if [ -z "$access_token" ]; then
-            echo "Failed to obtain access token."
-            exit 1
-          fi          
-          # Exportar el token de acceso como variable de entorno
-          echo "token=$access_token" >> $GITHUB_OUTPUT    
+        uses: DPA-APIS/action-fix-design/.github/actions/gh-app-token@fix-fase02
+        with:
+          app-id: ${{ vars.GH_APP_ID_PR_FIX_DESIGN_ACTION }}
+          private-key: ${{ secrets.GH_APP_PK_PR_FIX_DESIGN_ACTION }}
+          organization: ${{ github.repository_owner }}
+          purpose: 'Create PR'
 
       - name: Configurar usuario git
         shell: bash

@@ -24,8 +24,6 @@
         echo json_encode($array) ." $RESET\n";
         // 4. Analizar diferencias
         $analyzer = new DiffAnalyzer();
-        //$result = $analyzer->removedKeysGeneral($array);
-        //$result = $analyzer->removedKeysByApiType($result, $openapiType);
         $result = $analyzer->execute($array, $openapiType);
         echo "CONTENt DIFF $RESET\n";
         echo json_encode($result['content-diff']) ." $RESET\n";
