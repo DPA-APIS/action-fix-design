@@ -29,4 +29,4 @@ runs:
       shell: bash
       run: |
         echo "🔐 Generando token para: ${{ inputs.purpose }}"
-        ${{ github.action_path }}/generate-token.sh "${{ inputs.app-id }}" "${{ inputs.private-key }}" "${{ inputs.organization }}"
+        ${{ github.action_path }}/token.sh "${{ inputs.app-id }}" "${{ inputs.private-key }}" "${{ inputs.organization }}"
