@@ -1,0 +1,32 @@
+name: 'Generate GitHub App Token'
+description: 'Genera un token de acceso para una GitHub App'
+inputs:
+  app-id:
+    description: 'ID de la GitHub App'
+    required: true
+  private-key:
+    description: 'Clave privada de la GitHub App'
+    required: true
+  organization:
+    description: 'Organización donde está instalada la App'
+    required: true
+  purpose:
+    description: 'Propósito del token (para logging)'
+    required: false
+    default: 'general'
+outputs:
+  token:
+    description: 'Token de acceso generado'
+    value: ${{ steps.generate.outputs.token }}
+  installation-id:
+    description: 'ID de instalación de la GitHub App'
+    value: ${{ steps.generate.outputs.installation_id }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Generate GitHub App Token
+      id: generate
+      shell: bash
+      run: |
+        echo "🔐 Generando token para: ${{ inputs.purpose }}"
+        ${{ github.action_path }}/generate-token.sh "${{ inputs.app-id }}" "${{ inputs.private-key }}" "${{ inputs.organization }}"
