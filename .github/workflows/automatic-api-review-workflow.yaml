@@ -1,6 +1,8 @@
+
 name: automatic-api-review
 on:
   workflow_call
+  
 env:
   RED: '\033[31m'
   GREEN: '\033[32m'
@@ -10,7 +12,7 @@ env:
   API_DIRECTORY: 'api/'
   FUNCIONALITY_ENABLED: 'TRUE' # TRUE: habilitado, FALSE: deshabilitado
   GIT_ACTION_USER_NAME: 'gobiernoapis[bot]'
-  GIT_ACTION_USER_EMAIL: 'gobiernoapis@bcp.com.pe'
+  GIT_ACTION_USER_EMAIL: 'diomedex10@gmail.com'
   MSG_COMMIT_UPD_OPENAPI_VERSION: 'Actualizando version correcta del contrato OpenAPI'
   MSG_LAST_COMMIT: 'REVISAR-CONTRATO'
   VALID_API_TYPES: 'channel,business,core,dt' # Para desactivar todos configurar con 'none'
@@ -28,10 +30,44 @@ env:
     version
     security
     securitySchemes
-  OPENAPI_SNAPSHOT_IGNORE_KEYS_BS_CR: |
+    minimum
+    default
+    required
+    format
+    readOnly
+    style
+    extensions
+    operationID
+    components
+  OPENAPI_IGNORE_KEYS_BS: |
+    pattern
+    example
+    maxLength
+    minLength
+  OPENAPI_IGNORE_KEYS_CR: |
+    pattern
+    example
+    maxLength
+    minLength  
+  OPENAPI_IGNORE_KEYS_UX: |
+    pattern
+    example
+    maxLength
+    minLength
+  OPENAPI_REMOVE_KEYS_SNAPSHOT_BS: |
+    minItems
+    maxItems
+    responses
+  OPENAPI_REMOVE_KEYS_SNAPSHOT_CR: |
+    minItems
     maxItems  
-  OPENAPI_SNAPSHOT_IGNORE_KEYS_UX: |
-    maxItems, pattern
+    responses
+  OPENAPI_REMOVE_KEYS_SNAPSHOT_UX: |
+    minItems
+    maxItems
+    properties
+    query
+    responses
   
 jobs:
   review-api:
@@ -73,9 +109,11 @@ jobs:
           ORGANIZATION: ${{ github.repository_owner }}  # Organización o propietario del repositorio
         run: |
           # Guardar la clave privada en un archivo temporal
-          cat <<EOF > private-key.pem
-          ${PRIVATE_KEY}
-          EOF
+          #cat <<EOF > private-key.pem
+          #${PRIVATE_KEY}
+          #EOF
+
+          printf "%b" "$PRIVATE_KEY" > private-key.pem
 
           # Generar JWT
           now=$(date +%s)
@@ -122,14 +160,7 @@ jobs:
           # Exportar el token de acceso como variable de salida
           echo "token=$access_token" >> $GITHUB_OUTPUT
 
-      - name: Lint API
-        id: lint_api
-        if: false
-        #if: ${{ steps.gh_app.outcome == 'success' }}
-        uses: BCP-APIs/spectral-action@v1
-        with:
-          file_glob: ./api/${{ github.event.repository.name }}.yaml          
-          gh_app: ${{ steps.gh_app.outputs.token }}
+
       
       - name: Obtener tipo de API
         shell: bash
@@ -140,8 +171,17 @@ jobs:
           # Obtener tipo de API a partir del nombre de repositorio
           git_repo_name="${{ github.event.repository.name }}"
           api_type=$(echo $git_repo_name | cut -d'-' -f1)
+
+          # Lee el tipo de API del archivo OpenAPI
+          GIT_REPO_NAME="${{ github.event.repository.name }}"
+          API_DIRECTORY="${{ env.API_DIRECTORY }}"
+          openapi_api_type=$(yq '.x-dpa-api-type' "${API_DIRECTORY}${GIT_REPO_NAME}.yaml")
+
           echo -e $GREEN"******** El tipo de API es: '$api_type'."$RESET
           echo "api_type=$api_type" >> $GITHUB_OUTPUT
+
+          echo -e $GREEN"******** El tipo de API(openapi): '$openapi_api_type'."$RESET
+          echo "openapi_api_type=$openapi_api_type" >> $GITHUB_OUTPUT
   
       - name: Validar tipo de API habilitado
         shell: bash
@@ -362,7 +402,7 @@ jobs:
           
       - name: Ejecutar comparaciones con oasdiff
         id: oas_diff
-        uses: BCP-APIs/oasdiff-action/diff@v1.0.0
+        uses: DPA-APIS/oasdiff-action/diff@v1.0.0
         if: ${{ steps.generate_files_base_revision.outcome == 'success' }}
         with:
           base: 'specs/base.yaml'
@@ -386,186 +426,13 @@ jobs:
       - name: Procesar resultado de comparacion (BS y CR)
         if: ${{ steps.oas_diff.outcome == 'success' }}
         id: process_diff
-        run: |
-          php <<'EOF'
-          <?php
+        uses: DPA-APIS/action-fix-design/.github/actions/process-diff@fix-fase02
 
-          $RED= "\033[31m";
-          $GREEN= "\033[32m";
-          $YELLOW= "\033[33m";
-          $RESET = "\e[0m";
-          
-          // Cargar el archivo con el diff en JSON
-          $json = file_get_contents('diff-result.json');
-          if (!$json) {
-              echo "$RED No se pudo leer diff-result.json o está vacío.$RESET\n";
-              exit(1);
-          }
+        with:
+          diff-file: 'diff-result.json'
+          api-type: ${{ steps.get_api_type.outputs.api_type }}
+          openapi-api-type: ${{ steps.get_api_type.outputs.openapi_api_type }}
 
-          // Limpiar y preparar el JSON antes de decodificar
-          try {
-              // Eliminar posibles caracteres BOM u otros caracteres invisibles
-              $json = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $json);
-              
-              // Manejar expresiones regulares y escapes
-              $json = preg_replace('/\\\\\d/', '\\\\\\\\d', $json);
-              
-              // Intentar decodificar
-              $array = json_decode($json, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
-              
-              if ($array === null) {
-                  throw new Exception(json_last_error_msg());
-              }
-          } catch (Exception $e) {
-              echo "$RED Error procesando JSON: " . $e->getMessage() . "$RESET\n";
-              echo "$YELLOW Contenido del JSON:\n$json\n$RESET";
-              exit(1);
-          }
-
-          function analyzeDiffF(array $diffJson): array
-          {
-              //$diff = json_decode($diffJson, true);
-              $diff = $diffJson;
-              $changes = [
-                  'deletedFields' => [],
-                  'addedFields'   => [],
-                  'modifiedFields' => [],
-              ];
-
-              // Helper para registrar un cambio
-              $recordChange = function (&$list, $location, $path, $method, $mediaType, $field, $attribute = '') {
-                  $list[] = [
-                      'location'  => $location,
-                      'path'      => $path,
-                      'method'    => $method,
-                      'mediaType' => $mediaType,
-                      'field'     => $field,
-                      'attribute' => $attribute,
-                  ];
-              };
-
-              // Procesa propiedades añadidas, eliminadas o modificadas
-              $processProperties = function ($properties, $type, $location, $path, $method, $mediaType) use (&$changes, $recordChange) {
-                  foreach ($properties as $field => $attributes) {
-                      // Si es un array indexado, usa el valor directamente como campo
-                      if (is_int($field)) {
-                          $field = $attributes; // El valor es el campo
-                          $attributes = ''; // No hay atributos adicionales
-                      }
-                      $attribute = is_array($attributes) ? key($attributes) : '';
-                      $recordChange($changes[$type], $location, $path, $method, $mediaType, $field, $attribute);
-                  }
-              };
-
-              // Procesa los cambios en requestBody
-              $processRequestBody = function ($content, $path, $method) use (&$changes, $processProperties) {
-                  foreach ($content as $mediaType => $schema) {
-                      if (isset($schema['schema']['properties']['added'])) {
-                          $processProperties($schema['schema']['properties']['added'], 'addedFields', 'request', $path, $method, $mediaType);
-                      }
-                      if (isset($schema['schema']['properties']['deleted'])) {
-                          $processProperties($schema['schema']['properties']['deleted'], 'deletedFields', 'request', $path, $method, $mediaType);
-                      }
-                      if (isset($schema['schema']['properties']['modified'])) {
-                          $processProperties($schema['schema']['properties']['modified'], 'modifiedFields', 'request', $path, $method, $mediaType);
-                      }
-                  }
-              };
-
-              // Procesa los cambios en responses
-              $processResponses = function ($responses, $path, $method) use (&$changes, $processProperties) {
-                  foreach ($responses as $mediaType => $schema) {
-                      if (isset($schema['schema']['properties']['modified'])) {
-                          $processProperties($schema['schema']['properties']['modified'], 'modifiedFields', 'responses', $path, $method, $mediaType);
-                      }
-                  }
-              };
-
-              // Recorre los cambios en paths
-              if (!empty($diff['paths']['modified'])) {
-                  foreach ($diff['paths']['modified'] as $path => $pathData) {
-                      if (!empty($pathData['operations']['modified'])) {
-                          foreach ($pathData['operations']['modified'] as $method => $operation) {
-                              $mediaTypeModified = "modified";
-                              if (!empty($operation['requestBody']['content']['mediaTypeModified'])) {
-                                $mediaTypeModified = "mediaTypeModified";
-                              }
-                              if (!empty($operation['requestBody']['content'][$mediaTypeModified])) {
-                                  $processRequestBody($operation['requestBody']['content'][$mediaTypeModified], $path, $method);
-                              }
-                              if (!empty($operation['responses']['modified'])) {
-                                  $processResponses($operation['responses']['modified'], $path, $method);
-                              }
-                          }
-                      }
-                  }
-              }
-              echo "ANALIZANDO";
-              echo json_encode($cleaned)."\n";
-              return $changes;
-          }
-
-          // 2) Funciones auxiliares
-          function removeKeysRecursive($array, $keyRemove) {
-              foreach ($array as $key => $value) {
-                  if ($key === $keyRemove) {
-                      unset($array[$key]);
-                  } else if (is_array($value)) {
-                      $array[$key] = removeKeysRecursive($value, $keyRemove);
-                  } else if($value == "x-stoplight"){
-                     unset($array[$key]);
-                  }
-              }
-              return $array;
-          }
-
-          function cleanEmptyArraysRec(array $array): array
-          {
-              $array = array_map(function ($item) {
-                  return is_array($item) ? cleanEmptyArraysRec($item) : $item;
-              }, $array);
-
-              $array = array_filter($array, function ($v) {
-                  return !(is_array($v) && empty($v));
-              });
-
-              return $array;
-          }
-          
-          // 3) Elimina tags OpenApi tipo FIX
-          $keysToRemove = explode("\n", trim(getenv('OPENAPI_IGNORE_KEYS')));
-          foreach ($keysToRemove as $k) {
-              $array = removeKeysRecursive($array, $k);
-          }
-
-          // 4) Elimina tags OpenApi tipo FIX BS yCORE
-          $keysToRemove = explode("\n", trim(getenv('OPENAPI_SNAPSHOT_IGNORE_KEYS_BS_CR')));
-          foreach ($keysToRemove as $k) {
-              $array = removeKeysRecursive($array, $k);
-          }
-          echo "$YELLOW *********** PROCESANDO SOLICITUD $RESET\n";
-          $cleaned = cleanEmptyArraysRec($array);
-          echo json_encode($cleaned)."\n";
-
-          $cleaned = analyzeDiffF($cleaned);
-          echo json_encode($cleaned)."\n";
-
-          // 4) Determinar si hay cambios FIX
-          if (empty($cleaned)) {
-              echo "$GREEN *********** SOLICITUD TIPO FIX VALIDA$RESET\n";
-              file_put_contents(getenv('GITHUB_OUTPUT'), "is_fix=true\n", FILE_APPEND);
-              file_put_contents(getenv('GITHUB_OUTPUT'), "is_snapshot=false\n", FILE_APPEND);
-              exit(0);
-          } 
-          
-          echo "$RED ********** SOLICITUD TIPO FIX INVALIDA $RESET\n";
-          file_put_contents(getenv('GITHUB_OUTPUT'), "is_fix=false\n", FILE_APPEND);
-          file_put_contents(getenv('GITHUB_OUTPUT'), "is_snapshot=false\n", FILE_APPEND);
-          exit(0);
-
-          ?>
-          EOF
-      
       - name: Generar token de acceso para crear PR
         id: gh_app_pr
         if: ${{ steps.process_diff.outputs.is_fix == 'true' || steps.process_diff.outputs.is_snapshot == 'true' }}
@@ -628,7 +495,7 @@ jobs:
       - name: Configurar usuario git
         shell: bash
         id: config_git
-        if: ${{ steps.process_diff.outputs.is_fix == 'true' || steps.process_diff.outputs.is_snapshot == 'true'}}
+        if: ${{ steps.gh_app_pr.outcome == 'success' }}
         run: |
           # Configurar usuario de github action que realizara las operaciones GIT
           sudo chown -R "${USER:-$(id -un)}" .
@@ -636,25 +503,34 @@ jobs:
           git config --global user.email $GIT_ACTION_USER_EMAIL
 
           #Configurar el romote con el Token
-          git remote set-url origin "https://x-access-token:${{ steps.gh_app.outputs.token }}@github.com/${{ github.repository }}.git"
-
-      - name: Clonar repositorio de Action Fix Design
-        id: checkout_action_fix_design_repo
-        if: ${{ steps.validate_sequential_version.outcome == 'success' }}
-        uses: actions/checkout@v4
-        with:
-          repository: BCP-APIs/action-fix-design
-          ref: v2
-          token: ${{ steps.gh_app.outputs.token }}
-          path: action_fix_design-repo
+          git remote set-url origin "https://x-access-token:${{ steps.gh_app_pr.outputs.token }}@github.com/${{ github.repository }}.git"
 
       - name: Crear Pull Request
         id: create_pr
-        if: ${{ steps.checkout_action_fix_design_repo.outcome == 'success' && steps.gh_app_pr.outcome == 'success'}}
+        if: ${{ steps.config_git.outcome == 'success' }}
         env:
           GH_TOKEN: ${{ steps.gh_app_pr.outputs.token }}
         run: |
-          gh pr create --title ${GITHUB_REF_NAME} --body-file ./action_fix_design-repo/templates/PULL_REQUEST_TEMPLATE.md
+          # Crear el template del PR directamente
+          cat > pr_template.md << 'EOF'
+          ## Descripción
+          
+          Este Pull Request ha sido generado automáticamente por el sistema de revisión de APIs tipo FIX.
+          
+          ## Información técnica
+          
+          - **Versión OpenAPI**: ${{ steps.read_openapi_version.outputs.openapi_version }}
+          - **Último tag**: ${{ steps.get_latest_tag.outputs.latest_tag }}
+          - **Nuevo tag**: ${{ steps.validate_sequential_version.outputs.tags_new_version }}
+          - **Tipo de API**: ${{ steps.get_api_type.outputs.api_type }}
+          - **Tipo de cambio**: ${{ steps.process_diff.outputs.is_fix == 'true' && 'FIX' || 'SNAPSHOT' }}
+
+          ---
+
+          *Este PR fue generado automáticamente por GitHub Actions*
+          EOF
+          
+          gh pr create --title "${GITHUB_REF_NAME}" --body-file pr_template.md
 
       - name: Aprobar Pull Request
         if: ${{ steps.create_pr.outcome == 'success' }}
@@ -679,15 +555,15 @@ jobs:
       - name: Generar tag
         id: generate_tag
         shell: bash
-        if: ${{ steps.validate_sequential_version.outputs.tags_new_version != null}}
+        if: ${{ steps.validate_sequential_version.outputs.tags_new_version != null && steps.checkout_base_branch.outcome == 'success'}}
         run: |
           # Generar tag en GIT para la version fix
-          tag="${{ steps.validate_sequential_version.outputs.tags_new_version }}"
+          tags_new_version="${{ steps.validate_sequential_version.outputs.tags_new_version }}"
           is_snapshot="${{ steps.process_diff.outputs.is_snapshot }}"
           if [[ $is_snapshot == 'true' ]]; then
-            tag="$tag-SNAPSHOT"
+            tags_new_version="$tags_new_version-SNAPSHOT"
           fi
 
-          git tag -a "$tag" -m "$tag"
-          git push origin "${tag}"
-          echo -e $GREEN"******** Se genero tag '$tag' en GIT para la nueva version FIX."$RESET
+          git tag -a "$tags_new_version" -m "$tags_new_version"
+          git push origin "${tags_new_version}"
+          echo -e $GREEN"******** Se genero tag '$tags_new_version' en GIT para la nueva version FIX."$RESET
