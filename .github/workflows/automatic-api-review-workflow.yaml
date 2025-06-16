@@ -103,7 +103,7 @@ jobs:
           fi
           echo "is_valid=$result" >> $GITHUB_OUTPUT
 
-      - name: Obtener versión del OpenAPI (info.version)
+      - name: Obtener y validar versión del OpenAPI (info.version)
         id: read_openapi_version
         if: ${{ steps.validate_api_type.outputs.is_valid == 'TRUE' }} 
         run: |
@@ -116,29 +116,21 @@ jobs:
           # Exportar en outputs
           echo "openapi_version=$OPENAPI_VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Validar Formato versión OpenAPI (info.version)
-        id: validate_version_regex
-        shell: bash
-        if: ${{ steps.read_openapi_version.outputs.openapi_version != '' }}
-        run: |
-          # Validar si el ultimo tag tiene el correcto patron regex
           regex="$OPENAPI_VERSION_REGEX"
-          version="${{ steps.read_openapi_version.outputs.openapi_version }}"
-          
-          if echo "$version" | grep -Eq "$regex"; then
+          if echo "$OPENAPI_VERSION" | grep -Eq "$regex"; then
             result="true"
-            echo -e $GREEN"******** La version '$version' es VALIDA y cumple con el patron regex."$RESET
+            echo -e $GREEN"******** La version '$OPENAPI_VERSION' es VALIDA y cumple con el patron regex."$RESET
           else
             result="false"
-            echo -e $RED"******** La version '$version' NO es valida y NO cumple con el patron regex '$regex'."$RESET >&2
+            echo -e $RED"******** La version '$OPENAPI_VERSION' NO es valida y NO cumple con el patron regex '$regex'."$RESET >&2
             exit 1
           fi
           echo "is_valid=$result" >> $GITHUB_OUTPUT
 
-      - name: Obtener el último tag Revisado
+      - name: Obtener y validar el último tag Revisado
         id: get_latest_tag
         shell: bash
-        if: ${{ steps.validate_version_regex.outputs.is_valid == 'true' }}
+        if: ${{ steps.read_openapi_version.outputs.is_valid == 'true' }}
         run: |
           set -e
           
@@ -174,86 +166,13 @@ jobs:
             exit 1
           fi
 
-      - name: Validar formato ultimo tag Revisado
-        id: validate_latest_tag_regex
-        shell: bash
-        if: ${{ steps.get_latest_tag.outputs.latest_tag != '' }}
-        run: |
-          # Validar si el ultimo tag tiene el correcto patron regex
-          regex="$TAG_VERSION_SNAPSHOT_REGEX"
-          tag="${{ steps.get_latest_tag.outputs.latest_tag }}"
-          
-          if echo "$tag" | grep -Eq "$regex"; then
+          regex="$TAG_VERSION_SNAPSHOT_REGEX"          
+          if echo "$latest_tag" | grep -Eq "$regex"; then
             result="true"
-            echo -e $GREEN"******** El ultimo tag '$tag' es VALIDO y cumple con el patron regex."$RESET
+            echo -e $GREEN"******** El ultimo tag '$latest_tag' es VALIDO y cumple con el patron regex."$RESET
           else
             result="false"
-            echo -e $RED"******** El ultimo tag '$tag' NO es VALIDO y NO cumple con el patron regex '$regex'."$RESET >&2
-            exit 1
-          fi
-          echo "is_valid=$result" >> $GITHUB_OUTPUT
-
-      - name: Generar versión del nuevo tags
-        id: validate_sequential_version
-        shell: bash
-        if: ${{ steps.validate_latest_tag_regex.outcome == 'success' }}
-        run: |
-          set -e
-
-          # 1) Variables de entorno provenientes de pasos anteriores
-          openapi_version="${{ steps.read_openapi_version.outputs.openapi_version }}"
-          last_tag="${{ steps.get_latest_tag.outputs.latest_tag }}"
-          
-          # 2) Quitamos la 'v' y  "-SNAPSHOT" del último tag -> "1.0.8"
-          LAST_TAG_STRIPPED=${last_tag%-SNAPSHOT}
-          LAST_TAG_STRIPPED="${LAST_TAG_STRIPPED#v}"
-
-          echo -e $YELLOW"Versión del OpenAPI: $openapi_version"$RESET
-          echo -e $YELLOW"Último tag encontrado: $last_tag"$RESET
-          echo -e $YELLOW"Último tag VALIDO (sin 'v'): $LAST_TAG_STRIPPED"$RESET
-
-          # 3) Parsear (major, minor, patch) de ambos
-          openapi_major=$(echo "$openapi_version" | cut -d'.' -f1)
-          openapi_minor=$(echo "$openapi_version" | cut -d'.' -f2)
-          openapi_patch=$(echo "$openapi_version" | cut -d'.' -f3)
-
-          last_tag_major=$(echo "$LAST_TAG_STRIPPED" | cut -d'.' -f1)
-          last_tag_minor=$(echo "$LAST_TAG_STRIPPED" | cut -d'.' -f2)
-          last_tag_patch=$(echo "$LAST_TAG_STRIPPED" | cut -d'.' -f3)
-
-          # 4) Verificar la secuencialidad estricta:
-          #    - Mismo major
-          #    - Mismo minor
-          #    - patch == last_tag_patch + 1
-
-          tags_new_version="v${openapi_version}"
-          if [ "$openapi_major" -eq "$last_tag_major" ] && \
-            [ "$openapi_minor" -eq "$last_tag_minor" ] && \
-            [ "$openapi_patch" -eq $(( last_tag_patch + 1 )) ]; then
-            echo -e $GREEN"********* La NUEVA versión del tags es: $tags_new_version."$RESET
-            echo "is_valid=TRUE" >> $GITHUB_OUTPUT
-            echo "tags_new_version=$tags_new_version" >> $GITHUB_OUTPUT
-          else
-            echo -e $RED"********* La versión del OpenAPI ($openapi_version) no cumple la secuencia esperada."$RESET
-            echo -e $RED"********* Se esperaba que fuera $last_tag_major.$last_tag_minor.$(( last_tag_patch + 1 )) (basado en el último tag: $last_tag)."$RESET
-            exit 1
-          fi
-
-      - name: Validar formato del nuevo tag
-        id: validate_tag_regex
-        shell: bash
-        if: ${{ steps.validate_sequential_version.outputs.tags_new_version != '' }}
-        run: |
-          # Validar si el ultimo tag tiene el correcto patron regex
-          regex="$TAG_VERSION_REGEX"
-          tag="${{ steps.validate_sequential_version.outputs.tags_new_version }}"
-          
-          if echo "$tag" | grep -Eq "$regex"; then
-            result="true"
-            echo -e $GREEN"******** El tag '$tag' es VALIDO y cumple con el patron regex."$RESET
-          else
-            result="false"
-            echo -e $RED"******** El tag '$tag' NO es VALIDO y NO cumple con el patron regex '$regex'."$RESET >&2
+            echo -e $RED"******** El ultimo tag '$latest_tag' NO es VALIDO y NO cumple con el patron regex '$regex'."$RESET >&2
             exit 1
           fi
           echo "is_valid=$result" >> $GITHUB_OUTPUT
@@ -322,7 +241,7 @@ jobs:
           echo -e $GREEN"********** JSON VALIDO"$RESET
 
       - name: Procesar diferecias de contratos OpenAPI
-        if: ${{ steps.oas_diff.outcome == 'success' }}
+        if: ${{ steps.save_diff.outcome == 'success' }}
         id: process_diff
         uses: DPA-APIS/action-fix-design/.github/actions/process-diff@fix-fase02
 
@@ -330,10 +249,62 @@ jobs:
           diff-file: 'diff-result.json'
           api-type: ${{ steps.get_api_type.outputs.api_type }}
           openapi-api-type: ${{ steps.get_api_type.outputs.openapi_api_type }}
+      
+      - name: Generar versión del nuevo tags
+        id: validate_sequential_version
+        shell: bash
+        if: ${{ steps.process_diff.outputs.is_fix == 'true' || steps.process_diff.outputs.is_snapshot == 'true' }}
+        run: |
+          set -e
 
+          # 1) Variables de entorno provenientes de pasos anteriores
+          openapi_version="${{ steps.read_openapi_version.outputs.openapi_version }}"
+          last_tag="${{ steps.get_latest_tag.outputs.latest_tag }}"
+          
+          # 2) Quitamos la 'v' y  "-SNAPSHOT" del último tag -> "1.0.8"
+          LAST_TAG_STRIPPED=${last_tag%-SNAPSHOT}
+          LAST_TAG_STRIPPED="${LAST_TAG_STRIPPED#v}"
+
+          echo -e $YELLOW"Versión del OpenAPI: $openapi_version"$RESET
+          echo -e $YELLOW"Último tag encontrado: $last_tag"$RESET
+          echo -e $YELLOW"Último tag VALIDO (sin 'v'): $LAST_TAG_STRIPPED"$RESET
+
+          # 3) Parsear (major, minor, patch) de ambos
+          openapi_major=$(echo "$openapi_version" | cut -d'.' -f1)
+          openapi_minor=$(echo "$openapi_version" | cut -d'.' -f2)
+          openapi_patch=$(echo "$openapi_version" | cut -d'.' -f3)
+
+          last_tag_major=$(echo "$LAST_TAG_STRIPPED" | cut -d'.' -f1)
+          last_tag_minor=$(echo "$LAST_TAG_STRIPPED" | cut -d'.' -f2)
+          last_tag_patch=$(echo "$LAST_TAG_STRIPPED" | cut -d'.' -f3)
+
+          # 4) Verificar la secuencialidad estricta:
+          #    - version major openapi_major == last_tag_major
+          #    - version minor openapi_minor == last_tag_minor
+          #    - version patch openapi_patch == last_tag_patch + 1
+      
+          tags_new_version="v${openapi_version}"
+          if [ "$openapi_major" -eq "$last_tag_major" ] && \
+            [ "$openapi_minor" -eq "$last_tag_minor" ] && \
+            [ "$openapi_patch" -eq $(( last_tag_patch + 1 )) ]; then
+            is_valid='true'
+          else
+            echo -e $RED"********* La versión del OpenAPI ($openapi_version) no cumple la secuencia esperada."$RESET
+            echo -e $RED"********* Se esperaba que fuera $last_tag_major.$last_tag_minor.$(( last_tag_patch + 1 )) (basado en el último tag: $last_tag)."$RESET
+            exit 1
+          fi
+
+          is_snapshot="${{ steps.process_diff.outputs.is_snapshot }}"
+          if [[ $is_snapshot == 'true' ]]; then
+            tags_new_version="$tags_new_version-SNAPSHOT"
+          fi
+
+          echo -e $GREEN"********* La NUEVA versión del tags es: $tags_new_version."$RESET
+          echo "tags_new_version=$tags_new_version" >> $GITHUB_OUTPUT
+          
       - name: Generar token de acceso para crear PR
         id: gh_app_pr
-        if: ${{ steps.process_diff.outputs.is_fix == 'true' || steps.process_diff.outputs.is_snapshot == 'true' }}
+        f: ${{ steps.validate_sequential_version.outcome == 'success' }}
         uses: DPA-APIS/action-fix-design/.github/actions/generate-app-token@fix-fase02
         with:
           app-id: ${{ vars.GH_APP_ID_PR_FIX_DESIGN_ACTION }}
@@ -407,11 +378,7 @@ jobs:
         if: ${{ steps.validate_sequential_version.outputs.tags_new_version != null && steps.checkout_base_branch.outcome == 'success'}}
         run: |
           # Generar tag en GIT para la version fix
-          tags_new_version="${{ steps.validate_sequential_version.outputs.tags_new_version }}"
-          is_snapshot="${{ steps.process_diff.outputs.is_snapshot }}"
-          if [[ $is_snapshot == 'true' ]]; then
-            tags_new_version="$tags_new_version-SNAPSHOT"
-          fi
+          tags_new_version="${{ steps.validate_sequential_version.outputs.tags_new_version }}"       
 
           git tag -a "$tags_new_version" -m "$tags_new_version"
           git push origin "${tags_new_version}"
