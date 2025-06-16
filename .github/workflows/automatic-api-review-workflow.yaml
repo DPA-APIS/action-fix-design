@@ -19,55 +19,6 @@ env:
   TAG_VERSION_REGEX: '^v([0-9]+)\.([0-9]+)\.([0-9]+)?$'
   TAG_VERSION_SNAPSHOT_REGEX: '^v([0-9]+)\.([0-9]+)\.([0-9]+)(-SNAPSHOT)?$'
   OPENAPI_VERSION_REGEX: '^([0-9]+)\.([0-9]+)\.([0-9]+)?$'
-  OPENAPI_IGNORE_KEYS: |
-    example
-    summary
-    description
-    tags
-    externalDocs
-    contact
-    license
-    version
-    security
-    securitySchemes
-    minimum
-    default
-    required
-    format
-    readOnly
-    style
-    extensions
-    operationId
-    components
-  OPENAPI_IGNORE_KEYS_BS: |
-    pattern
-    example
-    maxLength
-    minLength
-  OPENAPI_IGNORE_KEYS_CR: |
-    pattern
-    example
-    maxLength
-    minLength  
-  OPENAPI_IGNORE_KEYS_UX: |
-    pattern
-    example
-    maxLength
-    minLength
-  OPENAPI_REMOVE_KEYS_SNAPSHOT_BS: |
-    minItems
-    maxItems
-    responses
-  OPENAPI_REMOVE_KEYS_SNAPSHOT_CR: |
-    minItems
-    maxItems  
-    responses
-  OPENAPI_REMOVE_KEYS_SNAPSHOT_UX: |
-    minItems
-    maxItems
-    properties
-    query
-    responses
   
 jobs:
   review-api:
