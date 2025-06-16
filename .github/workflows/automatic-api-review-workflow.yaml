@@ -304,7 +304,7 @@ jobs:
           
       - name: Generar token de acceso para crear PR
         id: gh_app_pr
-        f: ${{ steps.validate_sequential_version.outcome == 'success' }}
+        if: ${{ steps.validate_sequential_version.outcome == 'success' }}
         uses: DPA-APIS/action-fix-design/.github/actions/generate-app-token@fix-fase02
         with:
           app-id: ${{ vars.GH_APP_ID_PR_FIX_DESIGN_ACTION }}
