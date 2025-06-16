@@ -179,7 +179,7 @@ jobs:
 
       - name: Obtener archivo BASE y REVISION
         id: generate_files_base_revision
-        if: ${{ steps.validate_tag_regex.outputs.is_valid == 'true' }}
+        if: ${{ steps.get_latest_tag.outputs.is_valid == 'true' }}
         run: |
           #Creamos un directorio para almacenar los 2 YAML(BASE y REVISION)
           mkdir -p specs
