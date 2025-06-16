@@ -66,10 +66,12 @@ runs:
           minItems
           maxItems
           responses
+          properties
         OPENAPI_REMOVE_KEYS_SNAPSHOT_CR: |
           minItems
           maxItems  
           responses
+          properties
         OPENAPI_REMOVE_KEYS_SNAPSHOT_UX: |
           minItems
           maxItems
