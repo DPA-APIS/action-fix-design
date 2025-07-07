@@ -60,10 +60,9 @@ jobs:
           organization: ${{ github.repository_owner }}
           purpose: 'API Token Review'
        
-      - name: Obtener tipo de API
+      - name: Extraer información del contrato OpenAPI
         shell: bash
-        id: get_api_type
-        #if: ${{ steps.lint_api.outcome == 'success' }}
+        id: extract_openapi_info
         if: ${{ steps.gh_app.outcome == 'success' }}
         run: |
           # Obtener tipo de API a partir del nombre de repositorio
@@ -73,21 +72,47 @@ jobs:
           # Lee el tipo de API del archivo OpenAPI
           GIT_REPO_NAME="${{ github.event.repository.name }}"
           API_DIRECTORY="${{ env.API_DIRECTORY }}"
-          openapi_api_type=$(yq '.x-dpa-api-type' "${API_DIRECTORY}${GIT_REPO_NAME}.yaml")
+          api_file="${API_DIRECTORY}${GIT_REPO_NAME}.yaml"
 
-          echo -e $GREEN"******** El tipo de API es: '$api_type'."$RESET
+          openapi_api_type=$(yq '.x-dpa-api-type' "$api_file")
+          info_title=$(yq '.info.title' "$api_file")
+          info_version=$(yq '.info.version' "$api_file")
+          servers_url=$(yq '.servers[0].url' "$api_file")
+          api_id=$(yq '.x-dpa-api-id' "$api_file")
+          
+          echo "title=$info_title" >> $GITHUB_OUTPUT
+          echo "version=$info_version" >> $GITHUB_OUTPUT
+          echo "servers_url=$servers_url" >> $GITHUB_OUTPUT
+          echo "openapi_api_type=$x_dpa_api_type" >> $GITHUB_OUTPUT
           echo "api_type=$api_type" >> $GITHUB_OUTPUT
+          echo "api_id=$x_dpa_api_id" >> $GITHUB_OUTPUT
+          
+          echo -e $GREEN""******** Información extraída(Openapi) ********"$RESET
+          echo -e $GREEN"  Tipo de API(Repositorio) es: '$api_type'."$RESET
+          echo -e $GREEN"  Tipo de API(Openapi) : $openapi_api_type"$RESET
+          echo -e $GREEN"  Título: $info_title"$RESET
+          echo -e $GREEN"  Versión: $info_version"$RESET
+          echo -e $GREEN"  Server URL: $servers_url"$RESET
+          echo -e $GREEN"  API ID: $api_id"$RESET
+      
+      - name: Validar información del contrato
+        id: validate_contract_info
+        uses: DPA-APIS/action-fix-design/.github/actions/validate-openapi@fix-fase02
+        with:
+          title: ${{ steps.extract_openapi_info.outputs.title }}
+          version: ${{ steps.extract_openapi_info.outputs.version }}
+          servers-url: ${{ steps.extract_openapi_info.outputs.servers_url }}
+          openapi-type: ${{ steps.extract_openapi_info.outputs.openapi_api_type }}
+          repository-api-type: ${{ steps.extract_openapi_info.outputs.api_type }}
+          api-id: ${{ steps.extract_openapi_info.outputs.api_id }}
 
-          echo -e $GREEN"******** El tipo de API(openapi): '$openapi_api_type'."$RESET
-          echo "openapi_api_type=$openapi_api_type" >> $GITHUB_OUTPUT
-  
       - name: Validar tipo de API habilitado
         shell: bash
         id: validate_api_type
-        if: ${{ steps.get_api_type.outputs.api_type != '' }}
+        if: ${{ steps.extract_openapi_info.outputs.api_type != '' }}
         run: |
           # Validar si el tipo de API esta habilitado para iniciar con la revision automatica
-          api_type=${{ steps.get_api_type.outputs.api_type }}
+          api_type=${{ steps.extract_openapi_info.outputs.api_type }}
           echo -e $YELLOW"******** Validando el tipo de API '$api_type'."$RESET
           IFS=',' read -r -a api_types <<< $VALID_API_TYPES
           for type in "${api_types[@]}"; do
@@ -247,8 +272,8 @@ jobs:
 
         with:
           diff-file: 'diff-result.json'
-          api-type: ${{ steps.get_api_type.outputs.api_type }}
-          openapi-api-type: ${{ steps.get_api_type.outputs.openapi_api_type }}
+          api-type: ${{ steps.extract_openapi_info.outputs.api_type }}
+          openapi-api-type: ${{ steps.extract_openapi_info.outputs.openapi_api_type }}
       
       - name: Generar versión del nuevo tags
         id: validate_sequential_version
@@ -342,7 +367,7 @@ jobs:
           - **Versión OpenAPI**: ${{ steps.read_openapi_version.outputs.openapi_version }}
           - **Último tag**: ${{ steps.get_latest_tag.outputs.latest_tag }}
           - **Nuevo tag**: ${{ steps.validate_sequential_version.outputs.tags_new_version }}
-          - **Tipo de API**: ${{ steps.get_api_type.outputs.api_type }}
+          - **Tipo de API**: ${{ steps.extract_openapi_info.outputs.api_type }}
           - **Tipo de cambio**: ${{ steps.process_diff.outputs.is_fix == 'true' && 'FIX' || 'SNAPSHOT' }}
 
           ---

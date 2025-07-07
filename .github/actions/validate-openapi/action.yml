@@ -1,0 +1,43 @@
+# .github/actions/validate-openapi-info/action.yml
+name: 'Validate OpenAPI Contract Info'
+description: 'Valida información específica del contrato OpenAPI'
+inputs:
+  title:
+    description: 'Título de API'
+    required: false
+  version:
+    description: 'Versión del API'
+    required: true
+  servers-url:
+    description: 'URL del servidor'
+    required: false
+  openapi-api-type:
+    description: 'Tipo de API DPA'
+    required: true
+  repository-api-type:
+    description: 'Tipo de API DPA'
+    required: true  
+  api-id:
+    description: 'Identificador del API'
+    required: false
+outputs:
+  is-valid:
+    description: 'Si las validaciones pasaron'
+    value: ${{ steps.validate.outputs.is_valid }}
+  validation-errors:
+    description: 'Lista de errores encontrados'
+    value: ${{ steps.validate.outputs.errors }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate contract information
+      id: validate
+      shell: bash
+      run: |
+        php ${{ github.action_path }}/validate-contract.php \
+          "${{ inputs.title }}" \
+          "${{ inputs.version }}" \
+          "${{ inputs.servers-url }}" \
+          "${{ inputs.openapi-api-type }}" \
+          "${{ inputs.repository-api-type }}" \
+          "${{ inputs.api-id }}"
