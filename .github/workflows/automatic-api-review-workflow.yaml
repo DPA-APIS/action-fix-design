@@ -410,15 +410,20 @@ jobs:
           git push origin "${tags_new_version}"
           echo -e $GREEN"******** Se genero tag '$tags_new_version' en GIT para la nueva version FIX."$RESET
 
-      - name: Crear y cerrar issue (sin actions externas)
+      - name: Crear y cerrar issue tipo task
         if: ${{ steps.generate_tag.outcome == 'success' }}
         env:
           GH_TOKEN: ${{ steps.gh_app_pr.outputs.token }}
         run: |
-          # 1) Defino título y cuerpo
-          TITLE="Revisión FIX aplicada: ${{ github.repository }} @ v${{ steps.read_openapi_version.outputs.openapi_version }}"
+          # 1) Defino título y cuerpo con formato de task
+          TITLE="[TASK] Revisión FIX aplicada: ${{ github.repository }} @ v${{ steps.read_openapi_version.outputs.openapi_version }}"
           BODY=$(cat <<EOF
+          **Tipo**: Task Automatizada
+          **Estado**: Completada
+          
           Se ha aplicado la revisión automática del contrato OpenAPI:
+          
+          ## 📋 Detalles de la tarea
           - **Versión OpenAPI**: ${{ steps.read_openapi_version.outputs.openapi_version }}
           - **Nuevo tag**: ${{ steps.validate_sequential_version.outputs.tags_new_version }}
           - **Tipo de cambio**: ${{ steps.process_diff.outputs.is_fix == 'true' && 'FIX' || 'SNAPSHOT' }}
@@ -426,22 +431,31 @@ jobs:
           - **Commit**: ${{ github.sha }}
           - **Ejecutado por**: ${{ github.actor }}
           
+          ## ✅ Tareas completadas
+          - [x] Validación de contrato OpenAPI
+          - [x] Merge automático
+          - [x] Creación de tag de versión
+          - [x] Notificación completada
+          
           ---
-          *Issue generado automáticamente por GitHub Actions*
+          *Task generada automáticamente por GitHub Actions*
           EOF
           )
 
-          # 2) Crear el issue con el flag correcto
-          ISSUE_NUMBER=$(gh issue create \
+          # 2) Crear el issue con labels de task
+          ISSUE_URL=$(gh issue create \
             --title "$TITLE" \
             --body "$BODY" \
             --project "Revisiones Fix OpenAPI" \
-            --label "automated,fix,api-review" \
-            --assignee ${{ github.actor }} )
+            --assignee ${{ github.actor }})
 
-          echo "Issue creado: #$ISSUE_NUMBER"
+          # 3) Extraer número del issue
+          ISSUE_NUMBER=$(echo "$ISSUE_URL" | grep -o '[0-9]*$')
 
-          # 3) Cerrar inmediatamente el issue
-          gh issue close "$ISSUE_NUMBER" --comment "Issue cerrado automáticamente tras completar la revisión."
+          echo "Issue tipo Task creado: #$ISSUE_NUMBER"
+          echo "URL: $ISSUE_URL"
+
+          # 4) Cerrar inmediatamente con comentario de task completada
+          gh issue close "$ISSUE_NUMBER" --comment "✅ Task completada automáticamente. Todas las validaciones y procesos fueron ejecutados exitosamente."
           
-          echo "Issue #$ISSUE_NUMBER cerrado automáticamente"
+          echo "Issue Task #$ISSUE_NUMBER cerrado automáticamente"
