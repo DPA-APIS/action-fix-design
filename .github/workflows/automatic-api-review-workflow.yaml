@@ -410,38 +410,6 @@ jobs:
           git tag -a "$tags_new_version" -m "$tags_new_version"
           git push origin "${tags_new_version}"
           echo -e $GREEN"******** Se genero tag '$tags_new_version' en GIT para la nueva version FIX."$RESET
-    
-      - name: Diagnosticar proyectos disponibles
-        if: ${{ steps.generate_tag.outcome == 'success' }}
-        env:
-          GH_TOKEN: ${{ steps.gh_app.outputs.token }}
-        run: |
-          echo "=== DIAGNÓSTICO DE PROYECTOS ==="
-          echo "Organización: ${{ github.repository_owner }}"
-          echo "Repositorio: ${{ github.repository }}"
-
-          echo "--- Proyectos de la organización ---"
-          gh project list \
-            --owner ${{ github.repository_owner }} \
-            --format json \
-          | jq -r '.[] | "ID: \(.number), Nombre: \(.name), URL: \(.html_url)"' \
-          || echo "Error listando proyectos de organización"
-
-          echo "--- Proyectos del repositorio ---"
-          gh api repos/${{ github.repository_owner }}/${{ github.repository }}/projects \
-            -H "Accept: application/vnd.github.inertia-preview+json" \
-            --paginate \
-            --jq '.[] | "ID: \(.number), Nombre: \(.name), URL: \(.html_url)"' \
-          || echo "Error listando proyectos de repositorio"
-
-          echo "--- Buscando proyecto específico ---"
-          PROJECT_NAME="Revisiones Fix OpenAPI"
-          gh project list --owner ${{ github.repository_owner }} --format json \
-            | jq -e ".[] | select(.name == \"$PROJECT_NAME\")" \
-            && echo "Proyecto encontrado" || echo "Proyecto NO encontrado"
-
-          echo "--- Verificando permisos del token ---"
-          gh auth status || echo "Error verificando auth status"
 
       - name: Crear y cerrar issue tipo task
         if: ${{ steps.generate_tag.outcome == 'success' }}
@@ -499,4 +467,31 @@ jobs:
           
           echo "Issue Task #$ISSUE_NUMBER cerrado automáticamente"
       
-      
+      - name: Diagnosticar proyectos disponibles
+        if: ${{ steps.generate_tag.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ steps.gh_app.outputs.token }}
+        run: |
+          OWNER=${{ github.repository_owner }}
+          REPO=${{ github.repository }}
+
+          echo "=== DIAGNÓSTICO DE PROYECTOS ==="
+          echo "Organización: $OWNER"
+          echo "Repositorio: $REPO"
+
+          echo "--- Proyectos de la organización ---"
+          gh project list \
+            --owner "$OWNER" \
+            --format json \
+          | jq -r '.[] | "ID: \(.number), Título: \(.title), URL: \(.url)"' \
+          || echo "No se encontraron proyectos en la organización"
+
+          echo "--- Buscando proyecto específico ---"
+          PROJECT_NAME="Revisiones Fix OpenAPI"
+          gh project list --owner "$OWNER" --format json \
+            | jq -e --arg name "$PROJECT_NAME" '.[] | select(.title == $name)' \
+            && echo "Proyecto encontrado" \
+            || echo "Proyecto NO encontrado"
+
+          echo "--- Verificando permisos del token ---"
+          gh auth status
