@@ -455,11 +455,29 @@ jobs:
           echo "Issue tipo Task creado: #$ISSUE_NUMBER"
           echo "URL: $ISSUE_URL"
           
-          if gh project list --owner ${{ github.repository_owner }} --format json | jq -e ".[] | select(.title == \"$PROJECT_NAME\")" > /dev/null 2>&1; then
-            echo "Proyecto '$PROJECT_NAME' encontrado, añadiendo issue..."
-            gh project item-add --owner ${{ github.repository_owner }} --project "$PROJECT_NAME" --url "$ISSUE_URL" || echo "No se pudo añadir al proyecto, pero el issue fue creado exitosamente"
+          OWNER=${{ github.repository_owner }}
+          REPO=${{ github.repository }}
+
+          # 1) Buscar proyecto por título
+          echo "🔍 Buscando proyecto '$PROJECT_NAME' en la organización $OWNER..."
+          PROJECT_JSON=$(gh project list --owner "$OWNER" --format=json \
+            | jq -c --arg name "$PROJECT_NAME" '.projects[] | select(.title == $name)') || true
+
+          if [ -z "$PROJECT_JSON" ]; then
+            echo "❌ Proyecto '$PROJECT_NAME' no encontrado, el issue se creará sin asignar a proyecto"
           else
-            echo "Proyecto '$PROJECT_NAME' no encontrado, creando issue sin asignar a proyecto"
+            PROJECT_NUMBER=$(echo "$PROJECT_JSON" | jq -r '.number')
+            echo "✅ Proyecto encontrado: número $PROJECT_NUMBER"
+          fi
+
+
+          # 4) Añadir el issue al proyecto si existe
+          if [ -n "$PROJECT_NUMBER" ]; then
+            echo "✅ Añadiendo issue #$ISSUE_NUMBER al proyecto $PROJECT_NUMBER..."
+            gh project item-add "$PROJECT_NUMBER" \
+              --owner "$OWNER" \
+              --url "$ISSUE_URL" \
+            || echo "⚠️ No se pudo añadir al proyecto, pero el issue fue creado"
           fi
 
           # 4) Cerrar inmediatamente con comentario de task completada
