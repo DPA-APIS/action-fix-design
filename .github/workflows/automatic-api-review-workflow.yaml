@@ -409,3 +409,29 @@ jobs:
           git tag -a "$tags_new_version" -m "$tags_new_version"
           git push origin "${tags_new_version}"
           echo -e $GREEN"******** Se genero tag '$tags_new_version' en GIT para la nueva version FIX."$RESET
+
+      - name: Crear y cerrar issue (sin actions externas)
+        if: ${{ steps.generate_tag.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ steps.gh_app_pr.outputs.token }}   # o usa GITHUB_TOKEN si tiene permisos
+        run: |
+          # 1) Defino título y cuerpo
+          TITLE="Revisión FIX aplicada: ${{ github.repository }} @ v${{ steps.read_openapi_version.outputs.openapi_version }}"
+          BODY=$(cat <<EOF
+          Se ha aplicado la revisión automática del contrato OpenAPI:
+          - **Versión OpenAPI**: ${{ steps.read_openapi_version.outputs.openapi_version }}
+          - **Nuevo tag**: ${{ steps.validate_sequential_version.outputs.tags_new_version }}
+        
+          EOF
+                    )
+
+          # 2) Creo el issue y lo asigno al proyecto "Revisiones Fix OpenAPI"
+          ISSUE_NUMBER=$(gh issue create \
+            --title "$TITLE" \
+            --body "$BODY" \
+            --add-project "Revisiones Fix OpenAPI" \
+            --json number \
+            -q .number)
+
+          # 3) Lo cierro inmediatamente
+          gh issue close "$ISSUE_NUMBER"    
