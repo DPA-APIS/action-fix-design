@@ -482,14 +482,14 @@ jobs:
           echo "--- Proyectos de la organización ---"
           gh project list \
             --owner "$OWNER" \
-            --format json \
-          | jq -r '.[] | "ID: \(.number), Título: \(.title), URL: \(.url)"' \
+            --format=json \
+          | jq -r '.projects[] | "ID: \(.number), Título: \(.title), URL: \(.url)"' \
           || echo "No se encontraron proyectos en la organización"
 
           echo "--- Buscando proyecto específico ---"
           PROJECT_NAME="Revisiones Fix OpenAPI"
-          gh project list --owner "$OWNER" --format json \
-            | jq -e --arg name "$PROJECT_NAME" '.[] | select(.title == $name)' \
+          gh project list --owner "$OWNER" --format=json \
+            | jq -e --arg name "$PROJECT_NAME" '.projects[] | select(.title == $name)' \
             && echo "Proyecto encontrado" \
             || echo "Proyecto NO encontrado"
 
