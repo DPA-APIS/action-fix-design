@@ -414,7 +414,7 @@ jobs:
       - name: Crear y cerrar issue tipo task
         if: ${{ steps.generate_tag.outcome == 'success' }}
         env:
-          GH_TOKEN: ${{ steps.gh_app_pr.outputs.token }}
+          GH_TOKEN: ${{ steps.gh_app.outputs.token }}
         run: |
           # 1) Defino título y cuerpo con formato de task
           TITLE="[TASK] Revisión FIX aplicada: ${{ github.repository }} @ v${{ steps.read_openapi_version.outputs.openapi_version }}"
