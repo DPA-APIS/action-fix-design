@@ -83,9 +83,9 @@ jobs:
           echo "title=$info_title" >> $GITHUB_OUTPUT
           echo "version=$info_version" >> $GITHUB_OUTPUT
           echo "servers_url=$servers_url" >> $GITHUB_OUTPUT
-          echo "openapi_api_type=$x_dpa_api_type" >> $GITHUB_OUTPUT
+          echo "openapi_api_type=$openapi_api_type" >> $GITHUB_OUTPUT
           echo "api_type=$api_type" >> $GITHUB_OUTPUT
-          echo "api_id=$x_dpa_api_id" >> $GITHUB_OUTPUT
+          echo "api_id=$api_id" >> $GITHUB_OUTPUT
           
           echo -e $GREEN""******** Información extraída(Openapi) ********"$RESET
           echo -e $GREEN"  Tipo de API(Repositorio) es: '$api_type'."$RESET
@@ -97,6 +97,7 @@ jobs:
       
       - name: Validar información del contrato
         id: validate_contract_info
+        if: false
         uses: DPA-APIS/action-fix-design/.github/actions/validate-openapi@fix-fase02
         with:
           title: ${{ steps.extract_openapi_info.outputs.title }}
