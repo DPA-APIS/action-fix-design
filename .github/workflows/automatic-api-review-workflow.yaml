@@ -446,7 +446,7 @@ jobs:
           ISSUE_URL=$(gh issue create \
             --title "$TITLE" \
             --body "$BODY" \
-            --project "Revisiones Fix OpenAPI" \
+            --project "${{ github.repository_owner }}/2" \
             --assignee ${{ github.actor }})
 
           # 3) Extraer número del issue
