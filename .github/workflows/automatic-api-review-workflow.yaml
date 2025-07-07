@@ -87,7 +87,7 @@ jobs:
           echo "api_type=$api_type" >> $GITHUB_OUTPUT
           echo "api_id=$api_id" >> $GITHUB_OUTPUT
           
-          echo -e $GREEN""******** Información extraída(Openapi) ********"$RESET
+          echo -e $GREEN" ******** Información extraída(Openapi) ********"$RESET
           echo -e $GREEN"  Tipo de API(Repositorio) es: '$api_type'."$RESET
           echo -e $GREEN"  Tipo de API(Openapi) : $openapi_api_type"$RESET
           echo -e $GREEN"  Título: $info_title"$RESET
