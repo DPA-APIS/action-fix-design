@@ -489,24 +489,4 @@ jobs:
           
           echo "Issue Task #$ISSUE_NUMBER cerrado automáticamente"
       
-      - name: Diagnosticar proyectos disponibles
-        if: ${{ steps.generate_tag.outcome == 'success' }}
-        env:
-          GH_TOKEN: ${{ steps.gh_app.outputs.token }}
-        run: |
-          echo "=== DIAGNÓSTICO DE PROYECTOS ==="
-          echo "Organización: ${{ github.repository_owner }}"
-          echo "Repository: ${{ github.repository }}"
-          
-          echo "--- Listando todos los proyectos de la organización ---"
-          gh project list --owner ${{ github.repository_owner }} --format json | jq -r '.[] | "ID: \(.number), Título: \(.title), URL: \(.url)"' || echo "Error listando proyectos de organización"
-          
-          echo "--- Listando proyectos del repositorio ---"
-          gh project list --repo ${{ github.repository }} --format json | jq -r '.[] | "ID: \(.number), Título: \(.title), URL: \(.url)"' || echo "Error listando proyectos de repositorio"
-          
-          echo "--- Buscando proyecto específico ---"
-          PROJECT_NAME="Revisiones Fix OpenAPI"
-          gh project list --owner ${{ github.repository_owner }} --format json | jq -e ".[] | select(.title == \"$PROJECT_NAME\")" && echo "Proyecto encontrado" || echo "Proyecto NO encontrado"
-          
-          echo "--- Verificando permisos del token ---"
-          gh auth status || echo "Error verificando auth status"    
+      
