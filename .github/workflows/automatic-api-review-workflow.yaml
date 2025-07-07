@@ -437,9 +437,7 @@ jobs:
             --body "$BODY" \
             --project "Revisiones Fix OpenAPI" \
             --label "automated,fix,api-review" \
-            --assignee ${{ github.actor }} \
-            --json number \
-            -q .number)
+            --assignee ${{ github.actor }} )
 
           echo "Issue creado: #$ISSUE_NUMBER"
 
