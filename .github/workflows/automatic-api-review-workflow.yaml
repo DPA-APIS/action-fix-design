@@ -418,18 +418,28 @@ jobs:
         run: |
           echo "=== DIAGNÓSTICO DE PROYECTOS ==="
           echo "Organización: ${{ github.repository_owner }}"
-          echo "Repository: ${{ github.repository }}"
-          
-          echo "--- Listando todos los proyectos de la organización ---"
-          gh project list --owner ${{ github.repository_owner }} --format json | jq -r '.[] | "ID: \(.number), Título: \(.title), URL: \(.url)"' || echo "Error listando proyectos de organización"
-          
-          echo "--- Listando proyectos del repositorio ---"
-          gh project list --repo ${{ github.repository }} --format json | jq -r '.[] | "ID: \(.number), Título: \(.title), URL: \(.url)"' || echo "Error listando proyectos de repositorio"
-          
+          echo "Repositorio: ${{ github.repository }}"
+
+          echo "--- Proyectos de la organización ---"
+          gh project list \
+            --owner ${{ github.repository_owner }} \
+            --format json \
+          | jq -r '.[] | "ID: \(.number), Nombre: \(.name), URL: \(.html_url)"' \
+          || echo "Error listando proyectos de organización"
+
+          echo "--- Proyectos del repositorio ---"
+          gh api repos/${{ github.repository_owner }}/${{ github.repository }}/projects \
+            -H "Accept: application/vnd.github.inertia-preview+json" \
+            --paginate \
+            --jq '.[] | "ID: \(.number), Nombre: \(.name), URL: \(.html_url)"' \
+          || echo "Error listando proyectos de repositorio"
+
           echo "--- Buscando proyecto específico ---"
           PROJECT_NAME="Revisiones Fix OpenAPI"
-          gh project list --owner ${{ github.repository_owner }} --format json | jq -e ".[] | select(.title == \"$PROJECT_NAME\")" && echo "Proyecto encontrado" || echo "Proyecto NO encontrado"
-          
+          gh project list --owner ${{ github.repository_owner }} --format json \
+            | jq -e ".[] | select(.name == \"$PROJECT_NAME\")" \
+            && echo "Proyecto encontrado" || echo "Proyecto NO encontrado"
+
           echo "--- Verificando permisos del token ---"
           gh auth status || echo "Error verificando auth status"
 
